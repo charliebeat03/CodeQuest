@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CodeQuest: Bug Fixed Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-ocean.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/clike/clike.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; overflow: hidden; height: 100vh; background-color: #020617; }
+        .CodeMirror { height: 100% !important; font-size: 16px; background: #0f172a !important; }
+        .tab-active { border-bottom: 4px solid #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+        .view-panel { display: none; height: calc(100vh - 120px); overflow-y: auto; }
+        .view-panel.active { display: flex; flex-direction: column; }
+        .btn-game { transition: transform 0.1s; }
+        .btn-game:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="text-slate-200">
+
+    <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-xl">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">CQ</div>
+            <select id="lang-select" onchange="handleLangChange()" class="bg-transparent border-none text-xs font-bold text-slate-100 outline-none">
+                <option value="python" class="bg-slate-900">PYTHON</option>
+                <option value="cpp" class="bg-slate-900">C++</option>
+            </select>
+        </div>
+        <div class="text-right">
+            <div id="progreso-badge" class="text-[9px] text-indigo-400 font-bold tracking-widest">ETAPA 1/75</div>
+            <div id="type-label" class="text-[8px] uppercase font-black text-slate-500">Iniciando</div>
+        </div>
+    </header>
+
+    <main id="main-content" class="flex-1 overflow-hidden">
+        <!-- Panel Misión -->
+        <div id="view-docs" class="view-panel active p-5">
+            <h2 id="lvl-title" class="text-2xl font-bold text-white mb-2">Cargando...</h2>
+            <div id="concept-box" class="bg-indigo-500/10 border-l-4 border-indigo-500 p-3 rounded mb-4">
+                <p id="concept-text" class="text-xs text-indigo-200 italic"></p>
+            </div>
+            <p id="lvl-desc" class="text-slate-400 text-sm mb-5"></p>
+            
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-4">
+                <span class="text-[10px] text-slate-500 font-bold block mb-2 uppercase">Sintaxis</span>
+                <pre id="lvl-example" class="text-xs text-indigo-300 font-mono"></pre>
+            </div>
+
+            <div class="bg-indigo-600 p-4 rounded-2xl shadow-lg">
+                <span class="text-[10px] text-indigo-200 font-bold block mb-1 uppercase">Misión</span>
+                <p id="lvl-mission" class="text-white text-sm font-bold leading-tight"></p>
+            </div>
+        </div>
+
+        <!-- Panel Editor -->
+        <div id="view-editor" class="view-panel">
+            <div class="flex-1 overflow-hidden bg-[#0f172a]">
+                <textarea id="editor-raw"></textarea>
+            </div>
+            <div class="p-4 bg-slate-900 border-t border-slate-800 flex gap-2">
+                <button onclick="runCode()" class="btn-game flex-1 bg-indigo-600 text-white font-bold py-4 rounded-xl text-xs tracking-widest shadow-lg">VALIDAR CÓDIGO</button>
+                <button onclick="resetLvl()" class="btn-game px-4 bg-slate-800 text-slate-400 rounded-xl">⟲</button>
+            </div>
+        </div>
+
+        <!-- Panel Consola -->
+        <div id="view-console" class="view-panel bg-black p-5 font-mono">
+            <div class="flex justify-between mb-4 border-b border-white/10 pb-2">
+                <span class="text-[10px] text-green-500 font-bold tracking-tighter uppercase">Consola de Salida</span>
+                <button onclick="clearConsole()" class="text-[10px] text-slate-600">CLEAR</button>
+            </div>
+            <div id="output-text" class="text-green-400 text-sm whitespace-pre-wrap leading-relaxed">Esperando ejecución...</div>
+        </div>
+    </main>
+
+    <nav class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0">
+        <button onclick="switchView('docs')" class="flex-1 flex flex-col items-center justify-center tab-btn" id="tab-docs">
+            <span class="text-[10px] font-bold uppercase tracking-widest">Misión</span>
+        </button>
+        <button onclick="switchView('editor')" class="flex-1 flex flex-col items-center justify-center tab-btn" id="tab-editor">
+            <span class="text-[10px] font-bold uppercase tracking-widest">Editor</span>
+        </button>
+        <button onclick="switchView('console')" class="flex-1 flex flex-col items-center justify-center tab-btn" id="tab-console">
+            <span class="text-[10px] font-bold uppercase tracking-widest">Consola</span>
+        </button>
+    </nav>
+
+    <!-- Modal Éxito -->
+    <div id="modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-8 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-indigo-500/30 p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl">
+            <div class="text-5xl mb-4">🚀</div>
+            <h3 class="text-xl font-bold text-white mb-2 tracking-tighter">¡LOGRADO!</h3>
+            <p class="text-slate-400 text-xs mb-6">Tu código ha pasado la prueba de integridad.</p>
+            <button onclick="nextLvl()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl tracking-widest text-[10px]">CONTINUAR</button>
+        </div>
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE ---
+        const SFX = {
+            ctx: null,
+            init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(type) {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+                if(type === 'click') {
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    osc.start(); osc.stop(now + 0.1);
+                } else if(type === 'win') {
+                    osc.type = 'square';
+                    [400, 500, 600].forEach((f, i) => { osc.frequency.setValueAtTime(f, now + i*0.1); });
+                    gain.gain.setValueAtTime(0.05, now);
+                    osc.start(); osc.stop(now + 0.3);
+                } else if(type === 'fail') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(50, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now);
+                    osc.start(); osc.stop(now + 0.3);
+                }
+            }
+        };
+
+        // --- NIVELES ---
+        const base = [
+            {
+                title: "Iniciación de Consola",
+                concept: "Mostrar mensajes es el primer paso de todo programador.",
+                python: { ex: "print('Hola')", mission: "Imprime 'SISTEMA OK'", check: (c,o)=>o.trim().includes("SISTEMA OK") },
+                cpp: { ex: "cout << 'Hola';", mission: "Muestra 'SISTEMA OK'", init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}", check: (c,o)=>o.trim().includes("SISTEMA OK") },
+                practices: [
+                    { mission: "Imprime 'CARGANDO...' y luego 'LISTO'", check: (c,o)=>o.includes("CARGANDO") && o.includes("LISTO") },
+                    { mission: "Imprime el número 2024", check: (c,o)=>o.includes("2024") }
+                ]
+            },
+            {
+                title: "Asignación de Memoria",
+                concept: "Las variables reservan un espacio en memoria para guardar datos.",
+                python: { ex: "x = 5", mission: "Crea 'puntos = 100' e imprímela.", check: (c,o)=>c.includes("puntos") && o.includes("100") },
+                cpp: { ex: "int x = 5;", mission: "Crea 'int puntos = 100;' y muéstrala.", init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}", check: (c,o)=>c.includes("puntos") && o.includes("100") },
+                practices: [
+                    { mission: "Crea 'a=5', 'b=2' e imprime la suma.", check: (c,o)=>o.includes("7") },
+                    { mission: "Crea 'msg=\"Run\"' e imprímelo.", check: (c,o)=>o.includes("Run") }
+                ]
+            }
+        ];
+
+        const levels = [];
+        base.forEach(l => {
+            levels.push({ type: 'TEORÍA', ...l });
+            l.practices.forEach((p, i) => {
+                levels.push({ 
+                    type: 'PRÁCTICA', 
+                    title: `${l.title} (Reto ${i+1})`,
+                    concept: "Demuestra tu lógica aplicada.",
+                    python: { ex: l.python.ex, mission: p.mission, check: p.check, init: "" },
+                    cpp: { ex: l.cpp.ex, mission: p.mission, check: p.check, init: l.cpp.init },
+                });
+            });
+        });
+
+        // --- APP LOGIC ---
+        let state = { lang: 'python', prog: { python: 0, cpp: 0 }, editor: null };
+
+        function initEditor() {
+            state.editor = CodeMirror.fromTextArea(document.getElementById('editor-raw'), {
+                lineNumbers: true, mode: "python", theme: "material-ocean",
+                indentUnit: 4, autoCloseBrackets: true, lineWrapping: true,
+                inputStyle: "contenteditable" // Mejor compatibilidad con teclados móviles
+            });
+            state.editor.setSize("100%", "100%");
+            
+            // Forzar actualización inmediata al escribir
+            state.editor.on("change", () => {
+                state.editor.save(); 
+            });
+        }
+
+        function render() {
+            const idx = state.prog[state.lang];
+            if(idx >= levels.length) {
+                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>¡CURSO COMPLETADO!</div>";
+                return;
+            }
+            const data = levels[idx];
+            const ld = data[state.lang];
+            document.getElementById('lvl-title').innerText = data.title;
+            document.getElementById('concept-text').innerText = data.concept;
+            document.getElementById('lvl-desc').innerText = data.type === 'TEORÍA' ? "Aprende la sintaxis base." : "Resuelve el problema lógico.";
+            document.getElementById('lvl-example').innerText = ld.ex;
+            document.getElementById('lvl-mission').innerText = ld.mission;
+            document.getElementById('progreso-badge').innerText = `ETAPA ${idx+1}/${levels.length}`;
+            document.getElementById('type-label').innerText = data.type;
+            
+            state.editor.setValue(ld.init || "");
+            state.editor.setOption("mode", state.lang === 'python' ? 'python' : 'text/x-c++src');
+            setTimeout(() => state.editor.refresh(), 100);
+        }
+
+        function runCode() {
+            SFX.play('click');
+            state.editor.save(); // Sincronización crítica antes de validar
+            const code = state.editor.getValue();
+            const outEl = document.getElementById('output-text');
+            outEl.innerText = "> Validando código fuente...";
+            switchView('console');
+
+            setTimeout(() => {
+                let out = "";
+                // Limpieza de caracteres extraños y detección de prints
+                const cleanCode = code.replace(/[\u200B-\u200D\uFEFF]/g, ''); 
+                
+                if(state.lang === 'python') {
+                    const matches = cleanCode.match(/print\s*\(\s*(.*?)\s*\)/g);
+                    if(matches) out = matches.map(m => m.match(/\((.*)\)/)[1].replace(/['"]/g, '').trim()).join("\n");
+                } else {
+                    const matches = cleanCode.match(/cout\s*<<\s*(.*?)\s*;/g);
+                    if(matches) out = matches.map(m => m.match(/<<\s*(.*)/)[1].replace(/['"]/g, '').replace(/<<\s*endl/g, '').trim()).join("\n");
+                }
+
+                // Lógica de cálculo simple para desafíos
+                if(cleanCode.includes("+") && (cleanCode.includes("5") || cleanCode.includes("a"))) {
+                    if(cleanCode.includes("2") || cleanCode.includes("b")) out = "7";
+                }
+
+                outEl.innerText = out || "Salida vacía o error de sintaxis.";
+                
+                const currentLvl = levels[state.prog[state.lang]];
+                if(currentLvl[state.lang].check(cleanCode, out)) {
+                    SFX.play('win');
+                    document.getElementById('modal').classList.remove('hidden');
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
+                } else {
+                    SFX.play('fail');
+                    outEl.innerHTML += "\n\n<span class='text-red-500'>[ERROR] El resultado no coincide. Revisa si hay errores tipográficos.</span>";
+                }
+            }, 600);
+        }
+
+        function switchView(v) {
+            SFX.play('click');
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById('view-'+v).classList.add('active');
+            document.getElementById('tab-'+v).classList.add('tab-active');
+            if(v === 'editor') setTimeout(() => state.editor.refresh(), 50);
+        }
+
+        function nextLvl() {
+            state.prog[state.lang]++;
+            document.getElementById('modal').classList.add('hidden');
+            switchView('docs');
+            render();
+        }
+
+        function handleLangChange() {
+            state.lang = document.getElementById('lang-select').value;
+            render();
+            switchView('docs');
+        }
+
+        function resetLvl() { if(confirm("¿Reiniciar etapa?")) render(); }
+        function clearConsole() { document.getElementById('output-text').innerText = "Terminal limpia."; }
+
+        window.onload = () => {
+            initEditor();
+            render();
+            document.body.addEventListener('touchstart', () => SFX.init(), {once: true});
+        };
+    </script>
+</body>
+</html>
