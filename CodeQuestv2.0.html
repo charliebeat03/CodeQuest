@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CodeQuest: Mobile Zero</title>
+    <title>CodeQuest: Mobile Rescue</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-ocean.min.css">
@@ -15,11 +15,12 @@
 
     <style>
         :root {
-            --nav-height: 70px;
+            /* Altura de navegación aumentada para evitar controles de Android */
+            /* Sumamos un padding extra de 32px para elevar los botones */
+            --nav-height: calc(75px + env(safe-area-inset-bottom) + 32px);
             --header-height: 56px;
         }
 
-        /* Solución definitiva para el alto en móviles */
         html, body { 
             height: 100dvh; 
             margin: 0; 
@@ -27,7 +28,6 @@
             overflow: hidden; 
             background-color: #020617;
             overscroll-behavior: none;
-            position: fixed; /* Evita el scroll accidental del body en iOS */
             width: 100%;
         }
 
@@ -36,9 +36,7 @@
             flex-direction: column;
             height: 100dvh;
             width: 100%;
-            /* Soporte para el notch de iPhone */
             padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
         }
 
         main {
@@ -47,6 +45,8 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            /* El contenido termina antes de que empiece la barra elevada */
+            margin-bottom: 0; 
         }
 
         .view-panel {
@@ -62,7 +62,6 @@
             flex-direction: column;
         }
 
-        /* Editor ocupa todo el espacio central */
         .CodeMirror { 
             flex: 1 !important;
             height: 100% !important;
@@ -70,15 +69,18 @@
             background: #0f172a !important; 
         }
 
-        /* Navegación con padding extra para móviles sin marcos */
+        /* Barra de Navegación ELEVADA */
         nav {
             height: var(--nav-height);
             background-color: #0f172a;
-            border-top: 1px solid #1e293b;
+            border-top: 1px solid #334155;
             display: flex;
-            align-items: stretch;
-            padding-bottom: env(safe-area-inset-bottom);
+            align-items: flex-start; /* Alineamos al inicio para que el padding esté abajo */
+            padding-top: 10px;
+            /* Padding inferior crítico para subir los botones */
+            padding-bottom: calc(env(safe-area-inset-bottom) + 32px);
             z-index: 100;
+            box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.5);
         }
 
         .nav-item {
@@ -88,27 +90,32 @@
             align-items: center;
             justify-content: center;
             color: #94a3b8;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 11px;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: -0.025em;
             transition: all 0.2s;
+            height: 44px; /* Altura fija del botón táctil */
         }
 
         .nav-item.active {
             color: #818cf8;
-            background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.1));
-            box-shadow: inset 0 2px 0 #818cf8;
+            background: rgba(99, 102, 241, 0.1);
+            box-shadow: inset 0 3px 0 #818cf8;
         }
 
         .terminal-box {
             font-family: 'Fira Code', monospace;
             background: #000;
-            border-radius: 8px;
-            padding: 12px;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 16px;
             flex: 1;
             overflow-y: auto;
+            margin-bottom: 20px;
         }
+
+        /* Espaciado extra en el mapa para el último elemento */
+        #map-grid { padding-bottom: 40px; }
     </style>
 </head>
 <body>
@@ -117,67 +124,74 @@
         <!-- Encabezado -->
         <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
             <div class="flex items-center gap-2">
-                <div class="w-7 h-7 bg-indigo-600 rounded flex items-center justify-center font-bold text-white text-xs">CQ</div>
-                <span id="topic-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SISTEMA</span>
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">CQ</div>
+                <span id="topic-display" class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">SISTEMA</span>
             </div>
             <div class="text-right">
-                <div class="text-[10px] font-mono text-white" id="xp-display">0 XP</div>
-                <div class="w-16 h-1 bg-slate-800 rounded-full overflow-hidden">
-                    <div id="xp-bar" class="bg-indigo-500 h-full w-0"></div>
+                <div class="text-[11px] font-mono font-bold text-indigo-400" id="xp-display">0 XP</div>
+                <div class="w-20 h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                    <div id="xp-bar" class="bg-indigo-500 h-full w-0 transition-all duration-700"></div>
                 </div>
             </div>
         </header>
 
         <main>
             <!-- Panel: Mapa -->
-            <div id="panel-map" class="view-panel active p-4">
-                <h2 class="text-lg font-bold text-white mb-4 italic">Sectores de Datos</h2>
-                <div class="grid grid-cols-2 gap-3 pb-8" id="map-grid"></div>
+            <div id="panel-map" class="view-panel active p-5">
+                <h2 class="text-xl font-black text-white mb-1 uppercase tracking-tight">Sectores</h2>
+                <p class="text-[10px] text-slate-500 mb-6 font-bold uppercase tracking-widest">Infraestructura Global</p>
+                <div class="grid grid-cols-2 gap-4" id="map-grid"></div>
             </div>
 
             <!-- Panel: Misión -->
-            <div id="panel-docs" class="view-panel p-5">
+            <div id="panel-docs" class="view-panel p-6">
                 <div class="flex-1">
-                    <h2 id="m-title" class="text-xl font-black text-indigo-400 mb-2 uppercase">Cargando...</h2>
-                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-4">
-                        <p id="m-desc" class="text-xs text-slate-300"></p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                        <h2 id="m-title" class="text-xl font-black text-white uppercase italic">Cargando...</h2>
                     </div>
-                    <div class="bg-black p-3 rounded-lg border border-slate-800 font-mono text-[11px] text-green-500 mb-4">
-                        <span class="text-slate-500 block text-[9px] mb-1 italic">Sintaxis:</span>
-                        <code id="m-code"></code>
+                    <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 mb-4 shadow-xl">
+                        <p id="m-desc" class="text-sm text-slate-300 leading-relaxed"></p>
+                    </div>
+                    <div class="bg-black/50 p-4 rounded-xl border border-slate-800 font-mono text-xs text-indigo-300 mb-6">
+                        <span class="text-slate-600 block text-[9px] mb-2 font-bold uppercase">Referencia de Inyección:</span>
+                        <code id="m-code" class="text-indigo-400"></code>
                     </div>
                 </div>
-                <div class="bg-indigo-600 p-4 rounded-xl shadow-lg mt-auto">
-                    <p id="m-goal" class="text-white text-xs font-bold text-center"></p>
+                <div class="bg-indigo-600 p-5 rounded-2xl shadow-2xl shadow-indigo-900/20 mb-4">
+                    <p id="m-goal" class="text-white text-xs font-black text-center uppercase tracking-wide"></p>
                 </div>
             </div>
 
             <!-- Panel: Editor -->
             <div id="panel-editor" class="view-panel !p-0">
-                <div class="flex-1 overflow-hidden">
+                <div class="flex-1 overflow-hidden relative">
                     <textarea id="real-editor"></textarea>
                 </div>
-                <div class="p-3 bg-slate-900 border-t border-slate-800">
-                    <button onclick="game.run()" class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl text-xs tracking-widest shadow-xl active:scale-[0.98]">EJECUTAR SECUENCIA</button>
+                <div class="p-4 bg-slate-900 border-t border-slate-800">
+                    <button onclick="game.run()" class="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl text-xs tracking-[0.2em] shadow-xl shadow-indigo-900/40 active:scale-95 transition-all">INICIAR COMPILACIÓN</button>
                 </div>
             </div>
 
             <!-- Panel: Consola -->
-            <div id="panel-console" class="view-panel p-4 bg-slate-950">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-[9px] font-bold text-slate-500 uppercase">Salida de Sistema</span>
-                    <button onclick="game.nav('editor')" class="text-[9px] text-indigo-400 font-bold uppercase">Editar</button>
+            <div id="panel-console" class="view-panel p-5 bg-slate-950">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kernel v4.2</span>
+                    </div>
+                    <button onclick="game.nav('editor')" class="text-[10px] bg-slate-800 px-4 py-1.5 rounded-full text-indigo-300 font-bold uppercase">Corregir</button>
                 </div>
                 <div class="terminal-box">
-                    <div id="cons-output" class="text-green-400 text-xs whitespace-pre-wrap"></div>
+                    <div id="cons-output" class="text-green-400 text-sm whitespace-pre-wrap leading-relaxed"></div>
                 </div>
             </div>
         </main>
 
-        <!-- Navegación Inferior Robusta -->
-        <nav>
+        <!-- Navegación con MARGEN EXTRA PARA ANDROID -->
+        <nav id="bottom-nav">
             <button onclick="game.nav('map')" id="btn-map" class="nav-item active">
-                <span>Explorar</span>
+                <span>Mapa</span>
             </button>
             <button onclick="game.nav('docs')" id="btn-docs" class="nav-item">
                 <span>Misión</span>
@@ -189,11 +203,12 @@
     </div>
 
     <!-- ModalÉxito -->
-    <div id="modal" class="hidden fixed inset-0 z-[200] bg-slate-950/90 flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-slate-900 border border-indigo-500/50 p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl">
-            <div class="text-4xl mb-3">⭐</div>
-            <h3 class="text-lg font-bold text-white mb-4 uppercase">Nodo Sincronizado</h3>
-            <button onclick="game.next()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs">SIGUIENTE SECTOR</button>
+    <div id="modal" class="hidden fixed inset-0 z-[300] bg-slate-950/95 flex items-center justify-center p-8 backdrop-blur-md">
+        <div class="bg-slate-900 border border-indigo-500/30 p-10 rounded-[3rem] w-full max-w-xs text-center shadow-2xl">
+            <div class="text-5xl mb-6">💎</div>
+            <h3 class="text-xl font-black text-white mb-2 uppercase tracking-tighter italic">Sincronía OK</h3>
+            <p class="text-slate-500 text-[10px] mb-8 font-bold uppercase tracking-widest">Acceso Nivel Concedido</p>
+            <button onclick="game.next()" class="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl text-[10px] tracking-widest shadow-xl shadow-indigo-600/20">CONTINUAR</button>
         </div>
     </div>
 
@@ -205,16 +220,16 @@
             levels: [
                 { id: 'python', name: 'Python', icon: '🐍', target: 'ACCESO_OK', d: 'Muestra un mensaje en consola.', code: "print('ACCESO_OK')" },
                 { id: 'cpp', name: 'C++', icon: '⚙️', target: 'SISTEMA_UP', d: 'Comunicación de bajo nivel.', code: "cout << 'SISTEMA_UP';" },
-                { id: 'sql', name: 'SQL', icon: '🗄️', target: 'SELECT', d: 'Consultas a bases de datos.', code: "SELECT * FROM data;" },
-                { id: 'html', name: 'Frontend', icon: '🌐', target: 'BODY', d: 'Estructura visual web.', code: "TAG BODY" },
-                { id: 'linux', name: 'Linux', icon: '💻', target: 'ROOT', d: 'Usuario administrador.', code: "USER ROOT" },
-                { id: 'git', name: 'Git', icon: '🌿', target: 'COMMIT', d: 'Control de versiones.', code: "GIT COMMIT" },
+                { id: 'sql', name: 'SQL', icon: '🗄️', target: 'SELECT', d: 'Búsqueda en registros.', code: "SELECT * FROM db;" },
                 { id: 'redes', name: 'Redes', icon: '📡', target: '443', d: 'Puerto seguro HTTPS.', code: "PORT 443" },
-                { id: 'sec', name: 'Security', icon: '🛡️', target: 'SHA256', d: 'Algoritmo de cifrado.', code: "ALGO SHA256" },
-                { id: 'ia', name: 'I.A.', icon: '🧠', target: 'NEURON', d: 'Nodo de inteligencia.', code: "INIT NEURON" },
-                { id: 'data', name: 'Data', icon: '📊', target: 'STACK', d: 'Estructura de pila.', code: "TYPE STACK" },
-                { id: 'logic', name: 'Logic', icon: '🧩', target: 'TRUE', d: 'Operación booleana.', code: "VAL TRUE" },
-                { id: 'bin', name: 'Binary', icon: '🔢', target: '1010', d: 'Código de máquina.', code: "BIN 1010" }
+                { id: 'sec', name: 'CyberSec', icon: '🛡️', target: 'SHA256', d: 'Inyección de integridad.', code: "ALGO SHA256" },
+                { id: 'ia', name: 'IA', icon: '🧠', target: 'NEURON', d: 'Iniciando red neuronal.', code: "INIT NEURON" },
+                { id: 'html', name: 'Web Dev', icon: '🌐', target: 'BODY', d: 'Etiqueta raíz de página.', code: "TAG BODY" },
+                { id: 'git', name: 'Git', icon: '🌿', target: 'COMMIT', d: 'Guardado de cambios.', code: "GIT COMMIT" },
+                { id: 'linux', name: 'Kernel', icon: '💻', target: 'ROOT', d: 'Usuario administrador.', code: "USER ROOT" },
+                { id: 'data', name: 'Data Struct', icon: '📊', target: 'STACK', d: 'Pila de datos LIFO.', code: "TYPE STACK" },
+                { id: 'logic', name: 'Logic', icon: '🧩', target: 'TRUE', d: 'Valor booleano positivo.', code: "VAL TRUE" },
+                { id: 'bin', name: 'Binary', icon: '🔢', target: '1010', d: 'Código de máquina puro.', code: "BIN 1010" }
             ],
 
             init() {
@@ -224,18 +239,22 @@
                 });
                 this.renderMap();
                 this.updateUI();
-                // Ajuste para evitar que el teclado mueva el layout en algunos Android
-                window.visualViewport.addEventListener('resize', () => {
-                    document.body.style.height = window.visualViewport.height + 'px';
-                });
+                
+                // Forzamos el ajuste de altura cuando el teclado aparece en móviles
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', () => {
+                        document.body.style.height = window.visualViewport.height + 'px';
+                    });
+                }
             },
 
             renderMap() {
                 const g = document.getElementById('map-grid');
                 g.innerHTML = this.levels.map(l => `
-                    <button onclick="game.select('${l.id}')" class="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-left active:bg-slate-800">
-                        <span class="text-xl mb-1 block">${l.icon}</span>
-                        <span class="text-[10px] font-bold text-white block">${l.name}</span>
+                    <button onclick="game.select('${l.id}')" class="p-5 bg-slate-900 border border-slate-800 rounded-[2rem] text-left active:bg-slate-800 shadow-lg transition-all">
+                        <span class="text-3xl mb-2 block">${l.icon}</span>
+                        <span class="text-[11px] font-black text-white block uppercase tracking-tighter">${l.name}</span>
+                        <div class="w-6 h-1 bg-indigo-500 mt-2 rounded-full opacity-50"></div>
                     </button>
                 `).join('');
             },
@@ -247,7 +266,7 @@
                 document.getElementById('m-title').innerText = l.name;
                 document.getElementById('m-desc').innerText = l.d;
                 document.getElementById('m-code').innerText = l.code;
-                document.getElementById('m-goal').innerText = "Imprime: " + l.target;
+                document.getElementById('m-goal').innerText = "Imprime exactamente: " + l.target;
                 this.cm.setValue("");
                 this.nav('docs');
             },
@@ -257,25 +276,28 @@
                 const out = document.getElementById('cons-output');
                 this.nav('console');
                 
-                out.innerHTML = `<span class="opacity-50">> Ejecutando...</span>\n`;
+                out.innerHTML = `<span style="color: #64748b">> Inicializando entorno de ejecución...\n</span>`;
+                out.innerHTML += `<span style="color: #64748b">> Analizando sintaxis de entrada...\n</span>`;
                 
                 let res = "";
                 const m = val.match(/['"](.*?)['"]/);
                 if(m) res = m[1];
                 else res = val.split(/[\s\(\)\<\<\;\:]+/).filter(w => w.length > 0).pop() || "";
 
-                out.innerHTML += `> RESULTADO: ${res}\n`;
-
-                const target = this.levels.find(x => x.id === this.cur).target;
-                if(res.toUpperCase() === target.toUpperCase()) {
-                    out.innerHTML += `<span class="text-indigo-400">\n[EXITO] VALIDACIÓN COMPLETADA.</span>`;
-                    setTimeout(() => {
-                        document.getElementById('modal').classList.remove('hidden');
-                        confetti({ particleCount: 80, spread: 40, origin: { y: 0.7 } });
-                    }, 400);
-                } else {
-                    out.innerHTML += `<span class="text-red-500">\n[ERROR] DATOS INCORRECTOS.</span>`;
-                }
+                setTimeout(() => {
+                    out.innerHTML += `<span style="color: #fff">> SALIDA GENERADA: </span><span style="color: #4ade80">${res}</span>\n`;
+                    const target = this.levels.find(x => x.id === this.cur).target;
+                    
+                    if(res.toUpperCase() === target.toUpperCase()) {
+                        out.innerHTML += `<span style="color: #818cf8; font-weight: bold">\n[OK] VERIFICACIÓN DE FIRMA EXITOSA.</span>`;
+                        setTimeout(() => {
+                            document.getElementById('modal').classList.remove('hidden');
+                            confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
+                        }, 500);
+                    } else {
+                        out.innerHTML += `<span style="color: #ef4444; font-weight: bold">\n[ERROR] FIRMA NO RECONOCIDA. REINICIAR.</span>`;
+                    }
+                }, 300);
             },
 
             next() {
@@ -303,4 +325,3 @@
     </script>
 </body>
 </html>
-
