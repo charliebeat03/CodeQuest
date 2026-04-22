@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CodeQuest: Bug Fixed Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CodeQuest: Mobile Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-ocean.min.css">
@@ -13,32 +13,52 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; overflow: hidden; height: 100vh; background-color: #020617; }
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sab: env(safe-area-inset-bottom);
+        }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            overflow: hidden; 
+            height: 100dvh; /* Usa dynamic viewport height */
+            background-color: #020617; 
+            display: flex;
+            flex-direction: column;
+        }
         .CodeMirror { height: 100% !important; font-size: 16px; background: #0f172a !important; }
-        .tab-active { border-bottom: 4px solid #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.1); }
-        .view-panel { display: none; height: calc(100vh - 120px); overflow-y: auto; }
+        .tab-active { 
+            color: #6366f1; 
+            background: rgba(99, 102, 241, 0.15);
+            border-top: 2px solid #6366f1;
+        }
+        .view-panel { display: none; flex: 1; overflow-y: auto; }
         .view-panel.active { display: flex; flex-direction: column; }
-        .btn-game { transition: transform 0.1s; }
+        .btn-game { transition: transform 0.1s; touch-action: manipulation; }
         .btn-game:active { transform: scale(0.95); }
+        
+        /* Ajuste para que la consola no tape la navegación */
+        #view-console { padding-bottom: 2rem; }
     </style>
 </head>
 <body class="text-slate-200">
 
-    <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-xl">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">CQ</div>
-            <select id="lang-select" onchange="handleLangChange()" class="bg-transparent border-none text-xs font-bold text-slate-100 outline-none">
-                <option value="python" class="bg-slate-900">PYTHON</option>
-                <option value="cpp" class="bg-slate-900">C++</option>
+    <!-- Header con padding superior para notch -->
+    <header class="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-xl" style="padding-top: var(--sat)">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg">CQ</div>
+            <select id="lang-select" onchange="handleLangChange()" class="bg-slate-800 border-none text-[10px] font-bold text-slate-100 outline-none rounded-lg px-2 py-1">
+                <option value="python">PYTHON</option>
+                <option value="cpp">C++</option>
             </select>
         </div>
         <div class="text-right">
-            <div id="progreso-badge" class="text-[9px] text-indigo-400 font-bold tracking-widest">ETAPA 1/75</div>
+            <div id="progreso-badge" class="text-[10px] text-indigo-400 font-bold tracking-widest">ETAPA 1/75</div>
             <div id="type-label" class="text-[8px] uppercase font-black text-slate-500">Iniciando</div>
         </div>
     </header>
 
-    <main id="main-content" class="flex-1 overflow-hidden">
+    <!-- Contenido Principal Dinámico -->
+    <main id="main-content" class="flex-1 overflow-hidden relative">
         <!-- Panel Misión -->
         <div id="view-docs" class="view-panel active p-5">
             <h2 id="lvl-title" class="text-2xl font-bold text-white mb-2">Cargando...</h2>
@@ -49,10 +69,10 @@
             
             <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-4">
                 <span class="text-[10px] text-slate-500 font-bold block mb-2 uppercase">Sintaxis</span>
-                <pre id="lvl-example" class="text-xs text-indigo-300 font-mono"></pre>
+                <pre id="lvl-example" class="text-xs text-indigo-300 font-mono overflow-x-auto"></pre>
             </div>
 
-            <div class="bg-indigo-600 p-4 rounded-2xl shadow-lg">
+            <div class="bg-indigo-600 p-4 rounded-2xl shadow-lg mt-auto mb-4">
                 <span class="text-[10px] text-indigo-200 font-bold block mb-1 uppercase">Misión</span>
                 <p id="lvl-mission" class="text-white text-sm font-bold leading-tight"></p>
             </div>
@@ -63,9 +83,9 @@
             <div class="flex-1 overflow-hidden bg-[#0f172a]">
                 <textarea id="editor-raw"></textarea>
             </div>
-            <div class="p-4 bg-slate-900 border-t border-slate-800 flex gap-2">
+            <div class="p-4 bg-slate-900 border-t border-slate-800 flex gap-2 shrink-0">
                 <button onclick="runCode()" class="btn-game flex-1 bg-indigo-600 text-white font-bold py-4 rounded-xl text-xs tracking-widest shadow-lg">VALIDAR CÓDIGO</button>
-                <button onclick="resetLvl()" class="btn-game px-4 bg-slate-800 text-slate-400 rounded-xl">⟲</button>
+                <button onclick="resetLvl()" class="btn-game px-6 bg-slate-800 text-slate-400 rounded-xl">⟲</button>
             </div>
         </div>
 
@@ -73,26 +93,30 @@
         <div id="view-console" class="view-panel bg-black p-5 font-mono">
             <div class="flex justify-between mb-4 border-b border-white/10 pb-2">
                 <span class="text-[10px] text-green-500 font-bold tracking-tighter uppercase">Consola de Salida</span>
-                <button onclick="clearConsole()" class="text-[10px] text-slate-600">CLEAR</button>
+                <button onclick="clearConsole()" class="text-[10px] text-slate-500 bg-slate-900 px-2 py-1 rounded">CLEAR</button>
             </div>
             <div id="output-text" class="text-green-400 text-sm whitespace-pre-wrap leading-relaxed">Esperando ejecución...</div>
         </div>
     </main>
 
-    <nav class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0">
-        <button onclick="switchView('docs')" class="flex-1 flex flex-col items-center justify-center tab-btn" id="tab-docs">
-            <span class="text-[10px] font-bold uppercase tracking-widest">Misión</span>
+    <!-- Navegación Inferior (Fija abajo) -->
+    <nav class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0" style="padding-bottom: var(--sab)">
+        <button onclick="switchView('docs')" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn" id="tab-docs">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
+            <span class="text-[9px] font-bold uppercase tracking-widest">Misión</span>
         </button>
-        <button onclick="switchView('editor')" class="flex-1 flex flex-col items-center justify-center tab-btn" id="tab-editor">
-            <span class="text-[10px] font-bold uppercase tracking-widest">Editor</span>
+        <button onclick="switchView('editor')" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn" id="tab-editor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span class="text-[9px] font-bold uppercase tracking-widest">Editor</span>
         </button>
-        <button onclick="switchView('console')" class="flex-1 flex flex-col items-center justify-center tab-btn" id="tab-console">
-            <span class="text-[10px] font-bold uppercase tracking-widest">Consola</span>
+        <button onclick="switchView('console')" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn" id="tab-console">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M7 8l3 3-3 3"/><path d="M12 14h4"/></svg>
+            <span class="text-[9px] font-bold uppercase tracking-widest">Consola</span>
         </button>
     </nav>
 
     <!-- Modal Éxito -->
-    <div id="modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-8 backdrop-blur-sm">
+    <div id="modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 flex items-center justify-center p-8 backdrop-blur-sm">
         <div class="bg-slate-900 border border-indigo-500/30 p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl">
             <div class="text-5xl mb-4">🚀</div>
             <h3 class="text-xl font-bold text-white mb-2 tracking-tighter">¡LOGRADO!</h3>
@@ -107,28 +131,30 @@
             ctx: null,
             init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
             play(type) {
-                this.init();
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                const now = this.ctx.currentTime;
-                if(type === 'click') {
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-                    gain.gain.setValueAtTime(0.1, now);
-                    osc.start(); osc.stop(now + 0.1);
-                } else if(type === 'win') {
-                    osc.type = 'square';
-                    [400, 500, 600].forEach((f, i) => { osc.frequency.setValueAtTime(f, now + i*0.1); });
-                    gain.gain.setValueAtTime(0.05, now);
-                    osc.start(); osc.stop(now + 0.3);
-                } else if(type === 'fail') {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.linearRampToValueAtTime(50, now + 0.3);
-                    gain.gain.setValueAtTime(0.1, now);
-                    osc.start(); osc.stop(now + 0.3);
-                }
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    const now = this.ctx.currentTime;
+                    if(type === 'click') {
+                        osc.frequency.setValueAtTime(600, now);
+                        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                        gain.gain.setValueAtTime(0.1, now);
+                        osc.start(); osc.stop(now + 0.1);
+                    } else if(type === 'win') {
+                        osc.type = 'square';
+                        [400, 500, 600].forEach((f, i) => { osc.frequency.setValueAtTime(f, now + i*0.1); });
+                        gain.gain.setValueAtTime(0.05, now);
+                        osc.start(); osc.stop(now + 0.3);
+                    } else if(type === 'fail') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(200, now);
+                        osc.frequency.linearRampToValueAtTime(50, now + 0.3);
+                        gain.gain.setValueAtTime(0.1, now);
+                        osc.start(); osc.stop(now + 0.3);
+                    }
+                } catch(e) {}
             }
         };
 
@@ -137,8 +163,8 @@
             {
                 title: "Iniciación de Consola",
                 concept: "Mostrar mensajes es el primer paso de todo programador.",
-                python: { ex: "print('Hola')", mission: "Imprime 'SISTEMA OK'", check: (c,o)=>o.trim().includes("SISTEMA OK") },
-                cpp: { ex: "cout << 'Hola';", mission: "Muestra 'SISTEMA OK'", init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}", check: (c,o)=>o.trim().includes("SISTEMA OK") },
+                python: { ex: "print('Hola')", mission: "Imprime 'SISTEMA OK'", check: (c,o)=>o.trim().toUpperCase().includes("SISTEMA OK") },
+                cpp: { ex: "cout << \"Hola\";", mission: "Muestra 'SISTEMA OK'", init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}", check: (c,o)=>o.trim().toUpperCase().includes("SISTEMA OK") },
                 practices: [
                     { mission: "Imprime 'CARGANDO...' y luego 'LISTO'", check: (c,o)=>o.includes("CARGANDO") && o.includes("LISTO") },
                     { mission: "Imprime el número 2024", check: (c,o)=>o.includes("2024") }
@@ -175,22 +201,22 @@
 
         function initEditor() {
             state.editor = CodeMirror.fromTextArea(document.getElementById('editor-raw'), {
-                lineNumbers: true, mode: "python", theme: "material-ocean",
-                indentUnit: 4, autoCloseBrackets: true, lineWrapping: true,
-                inputStyle: "contenteditable" // Mejor compatibilidad con teclados móviles
+                lineNumbers: true, 
+                mode: "python", 
+                theme: "material-ocean",
+                indentUnit: 4, 
+                autoCloseBrackets: true, 
+                lineWrapping: true,
+                inputStyle: "contenteditable" 
             });
             state.editor.setSize("100%", "100%");
-            
-            // Forzar actualización inmediata al escribir
-            state.editor.on("change", () => {
-                state.editor.save(); 
-            });
+            state.editor.on("change", () => state.editor.save());
         }
 
         function render() {
             const idx = state.prog[state.lang];
             if(idx >= levels.length) {
-                document.body.innerHTML = "<div class='h-screen flex items-center justify-center font-bold'>¡CURSO COMPLETADO!</div>";
+                document.getElementById('main-content').innerHTML = "<div class='h-full flex flex-col items-center justify-center p-10 text-center'><div class='text-6xl mb-4'>🏆</div><h1 class='text-2xl font-bold'>¡CURSO COMPLETADO!</h1><p class='text-slate-400 mt-2'>Has dominado los fundamentos básicos de " + (state.lang == 'python' ? 'Python' : 'C++') + "</p></div>";
                 return;
             }
             const data = levels[idx];
@@ -205,12 +231,12 @@
             
             state.editor.setValue(ld.init || "");
             state.editor.setOption("mode", state.lang === 'python' ? 'python' : 'text/x-c++src');
-            setTimeout(() => state.editor.refresh(), 100);
+            setTimeout(() => state.editor.refresh(), 150);
         }
 
         function runCode() {
             SFX.play('click');
-            state.editor.save(); // Sincronización crítica antes de validar
+            state.editor.save(); 
             const code = state.editor.getValue();
             const outEl = document.getElementById('output-text');
             outEl.innerText = "> Validando código fuente...";
@@ -218,23 +244,27 @@
 
             setTimeout(() => {
                 let out = "";
-                // Limpieza de caracteres extraños y detección de prints
                 const cleanCode = code.replace(/[\u200B-\u200D\uFEFF]/g, ''); 
                 
                 if(state.lang === 'python') {
+                    // Simulación simple de salida
                     const matches = cleanCode.match(/print\s*\(\s*(.*?)\s*\)/g);
-                    if(matches) out = matches.map(m => m.match(/\((.*)\)/)[1].replace(/['"]/g, '').trim()).join("\n");
+                    if(matches) out = matches.map(m => {
+                        let inner = m.match(/\((.*)\)/)[1].trim();
+                        return inner.replace(/['"]/g, '');
+                    }).join("\n");
                 } else {
                     const matches = cleanCode.match(/cout\s*<<\s*(.*?)\s*;/g);
-                    if(matches) out = matches.map(m => m.match(/<<\s*(.*)/)[1].replace(/['"]/g, '').replace(/<<\s*endl/g, '').trim()).join("\n");
+                    if(matches) out = matches.map(m => {
+                        let inner = m.match(/<<\s*(.*)/)[1].replace(/;/,'').trim();
+                        return inner.replace(/['"]/g, '').replace(/<<\s*endl/g, '').trim();
+                    }).join("\n");
                 }
 
-                // Lógica de cálculo simple para desafíos
-                if(cleanCode.includes("+") && (cleanCode.includes("5") || cleanCode.includes("a"))) {
-                    if(cleanCode.includes("2") || cleanCode.includes("b")) out = "7";
-                }
+                // Lógica de cálculo para retos específicos
+                if(cleanCode.includes("+") && (cleanCode.match(/[a|5]/) && cleanCode.match(/[b|2]/))) out = "7";
 
-                outEl.innerText = out || "Salida vacía o error de sintaxis.";
+                outEl.innerText = out || "Salida vacía.";
                 
                 const currentLvl = levels[state.prog[state.lang]];
                 if(currentLvl[state.lang].check(cleanCode, out)) {
@@ -243,9 +273,9 @@
                     confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
                 } else {
                     SFX.play('fail');
-                    outEl.innerHTML += "\n\n<span class='text-red-500'>[ERROR] El resultado no coincide. Revisa si hay errores tipográficos.</span>";
+                    outEl.innerHTML += "\n\n<span class='text-red-500 font-bold'>[!] ERROR: El resultado no cumple la misión. Revisa el texto exacto.</span>";
                 }
-            }, 600);
+            }, 800);
         }
 
         function switchView(v) {
@@ -270,12 +300,19 @@
             switchView('docs');
         }
 
-        function resetLvl() { if(confirm("¿Reiniciar etapa?")) render(); }
-        function clearConsole() { document.getElementById('output-text').innerText = "Terminal limpia."; }
+        function resetLvl() { 
+            if(confirm("¿Reiniciar etapa actual?")) render(); 
+        }
+
+        function clearConsole() { 
+            document.getElementById('output-text').innerText = "Terminal limpia."; 
+        }
 
         window.onload = () => {
             initEditor();
             render();
+            switchView('docs');
+            // Inicializar audio con toque de usuario
             document.body.addEventListener('touchstart', () => SFX.init(), {once: true});
         };
     </script>
