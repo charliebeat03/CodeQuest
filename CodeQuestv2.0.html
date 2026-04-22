@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CodeQuest: Global Knowledge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CodeQuest: Mobile Zero</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-ocean.min.css">
@@ -14,29 +14,39 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        /* Bloqueo de scroll global para evitar que los botones desaparezcan */
+        :root {
+            --nav-height: 70px;
+            --header-height: 56px;
+        }
+
+        /* Solución definitiva para el alto en móviles */
         html, body { 
-            height: 100%; 
+            height: 100dvh; 
             margin: 0; 
             padding: 0; 
             overflow: hidden; 
             background-color: #020617;
-            color: #e2e8f0;
+            overscroll-behavior: none;
+            position: fixed; /* Evita el scroll accidental del body en iOS */
+            width: 100%;
         }
 
-        /* Contenedor principal tipo App */
-        .app-wrapper {
+        .app-container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            width: 100vw;
+            height: 100dvh;
+            width: 100%;
+            /* Soporte para el notch de iPhone */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* El área de contenido ocupa todo el espacio sobrante */
         main {
             flex: 1;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .view-panel {
@@ -52,244 +62,240 @@
             flex-direction: column;
         }
 
-        /* Ajuste específico para CodeMirror */
+        /* Editor ocupa todo el espacio central */
         .CodeMirror { 
-            flex: 1;
-            height: auto !important;
+            flex: 1 !important;
+            height: 100% !important;
             font-size: 16px; 
             background: #0f172a !important; 
         }
 
-        /* Estilo de botones de navegación */
-        .nav-btn {
+        /* Navegación con padding extra para móviles sin marcos */
+        nav {
+            height: var(--nav-height);
+            background-color: #0f172a;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            align-items: stretch;
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 100;
+        }
+
+        .nav-item {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -0.025em;
             transition: all 0.2s;
-            border-top: 3px solid transparent;
         }
 
-        .tab-active { 
-            color: #6366f1; 
-            border-top-color: #6366f1;
-            background: rgba(99, 102, 241, 0.05); 
+        .nav-item.active {
+            color: #818cf8;
+            background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.1));
+            box-shadow: inset 0 2px 0 #818cf8;
         }
 
-        .terminal-text {
-            font-family: 'Fira Code', 'Courier New', monospace;
-            color: #4ade80;
-            line-height: 1.5;
+        .terminal-box {
+            font-family: 'Fira Code', monospace;
+            background: #000;
+            border-radius: 8px;
+            padding: 12px;
+            flex: 1;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
 
-    <div class="app-wrapper">
-        <!-- Header Fijo -->
-        <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-lg z-20">
+    <div class="app-container">
+        <!-- Encabezado -->
+        <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
             <div class="flex items-center gap-2">
                 <div class="w-7 h-7 bg-indigo-600 rounded flex items-center justify-center font-bold text-white text-xs">CQ</div>
-                <span id="topic-label" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">SISTEMA</span>
+                <span id="topic-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SISTEMA</span>
             </div>
-            <div class="flex flex-col items-end">
-                <div class="flex items-center gap-2">
-                    <span id="rank-text" class="text-[9px] font-bold text-indigo-400 uppercase">RECLUTA</span>
-                    <span id="xp-text" class="text-[10px] font-mono text-white">0 XP</span>
-                </div>
-                <div class="w-20 h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
-                    <div id="xp-bar" class="bg-indigo-500 h-full w-0 transition-all duration-500"></div>
+            <div class="text-right">
+                <div class="text-[10px] font-mono text-white" id="xp-display">0 XP</div>
+                <div class="w-16 h-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="xp-bar" class="bg-indigo-500 h-full w-0"></div>
                 </div>
             </div>
         </header>
 
-        <!-- Contenido Dinámico -->
         <main>
-            <!-- 1. MAPA -->
-            <div id="view-map" class="view-panel active p-4">
-                <h2 class="text-xl font-bold text-white mb-1">Sectores de Red</h2>
-                <p class="text-[11px] text-slate-400 mb-4">Selecciona un nodo de datos.</p>
-                <div class="grid grid-cols-2 gap-3" id="map-grid"></div>
+            <!-- Panel: Mapa -->
+            <div id="panel-map" class="view-panel active p-4">
+                <h2 class="text-lg font-bold text-white mb-4 italic">Sectores de Datos</h2>
+                <div class="grid grid-cols-2 gap-3 pb-8" id="map-grid"></div>
             </div>
 
-            <!-- 2. MISIÓN -->
-            <div id="view-docs" class="view-panel p-6">
-                <h2 id="lvl-title" class="text-2xl font-bold text-white mb-2 italic">Misión</h2>
-                <div class="bg-indigo-500/10 border-l-4 border-indigo-500 p-4 rounded-r-xl mb-4">
-                    <p id="lvl-desc" class="text-sm text-indigo-100"></p>
+            <!-- Panel: Misión -->
+            <div id="panel-docs" class="view-panel p-5">
+                <div class="flex-1">
+                    <h2 id="m-title" class="text-xl font-black text-indigo-400 mb-2 uppercase">Cargando...</h2>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-4">
+                        <p id="m-desc" class="text-xs text-slate-300"></p>
+                    </div>
+                    <div class="bg-black p-3 rounded-lg border border-slate-800 font-mono text-[11px] text-green-500 mb-4">
+                        <span class="text-slate-500 block text-[9px] mb-1 italic">Sintaxis:</span>
+                        <code id="m-code"></code>
+                    </div>
                 </div>
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6 font-mono text-xs text-indigo-300">
-                    <span class="text-[10px] text-slate-500 uppercase block mb-1">Guía:</span>
-                    <div id="lvl-example"></div>
-                </div>
-                <div class="bg-indigo-600 p-5 rounded-2xl shadow-xl mt-auto">
-                    <p id="lvl-mission" class="text-white text-sm font-bold"></p>
-                </div>
-            </div>
-
-            <!-- 3. EDITOR -->
-            <div id="view-editor" class="view-panel !p-0">
-                <div class="flex-1 flex flex-col overflow-hidden">
-                    <textarea id="editor-raw"></textarea>
-                </div>
-                <div class="p-4 bg-slate-900 border-t border-slate-800 shrink-0">
-                    <button onclick="game.run()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl text-xs tracking-widest active:scale-95 transition-transform shadow-lg">VALIDAR CÓDIGO</button>
+                <div class="bg-indigo-600 p-4 rounded-xl shadow-lg mt-auto">
+                    <p id="m-goal" class="text-white text-xs font-bold text-center"></p>
                 </div>
             </div>
 
-            <!-- 4. CONSOLA -->
-            <div id="view-console" class="view-panel p-4 bg-black">
-                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                    <span class="text-[10px] font-bold text-green-500 tracking-widest uppercase">Kernel Output</span>
-                    <button onclick="game.switchTab('editor')" class="text-[9px] bg-slate-800 px-3 py-1 rounded text-slate-400">VOLVER</button>
+            <!-- Panel: Editor -->
+            <div id="panel-editor" class="view-panel !p-0">
+                <div class="flex-1 overflow-hidden">
+                    <textarea id="real-editor"></textarea>
                 </div>
-                <div id="output-text" class="terminal-text text-sm whitespace-pre-wrap"></div>
+                <div class="p-3 bg-slate-900 border-t border-slate-800">
+                    <button onclick="game.run()" class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl text-xs tracking-widest shadow-xl active:scale-[0.98]">EJECUTAR SECUENCIA</button>
+                </div>
+            </div>
+
+            <!-- Panel: Consola -->
+            <div id="panel-console" class="view-panel p-4 bg-slate-950">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-[9px] font-bold text-slate-500 uppercase">Salida de Sistema</span>
+                    <button onclick="game.nav('editor')" class="text-[9px] text-indigo-400 font-bold uppercase">Editar</button>
+                </div>
+                <div class="terminal-box">
+                    <div id="cons-output" class="text-green-400 text-xs whitespace-pre-wrap"></div>
+                </div>
             </div>
         </main>
 
-        <!-- Navegación Inferior (Siempre visible) -->
-        <nav class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0 z-30">
-            <button onclick="game.switchTab('map')" id="tab-map" class="nav-btn tab-active">
-                <span class="text-[10px] font-black uppercase tracking-tighter">Explorar</span>
+        <!-- Navegación Inferior Robusta -->
+        <nav>
+            <button onclick="game.nav('map')" id="btn-map" class="nav-item active">
+                <span>Explorar</span>
             </button>
-            <button onclick="game.switchTab('docs')" id="tab-docs" class="nav-btn">
-                <span class="text-[10px] font-black uppercase tracking-tighter">Misión</span>
+            <button onclick="game.nav('docs')" id="btn-docs" class="nav-item">
+                <span>Misión</span>
             </button>
-            <button onclick="game.switchTab('editor')" id="tab-editor" class="nav-btn">
-                <span class="text-[10px] font-black uppercase tracking-tighter">Editor</span>
+            <button onclick="game.nav('editor')" id="btn-editor" class="nav-item">
+                <span>Editor</span>
             </button>
         </nav>
     </div>
 
-    <!-- Modal Éxito -->
-    <div id="modal" class="hidden fixed inset-0 z-50 bg-slate-950/95 flex items-center justify-center p-8 backdrop-blur-sm">
-        <div class="bg-slate-900 border border-indigo-500/50 p-8 rounded-[2rem] w-full max-w-xs text-center shadow-2xl">
-            <div class="text-4xl mb-4">⚡</div>
-            <h3 class="text-xl font-bold text-white mb-2">INYECCIÓN EXITOSA</h3>
-            <button onclick="game.nextLevel()" class="mt-6 w-full bg-indigo-600 text-white font-bold py-4 rounded-xl text-[10px] tracking-widest">CONTINUAR</button>
+    <!-- ModalÉxito -->
+    <div id="modal" class="hidden fixed inset-0 z-[200] bg-slate-950/90 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-indigo-500/50 p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl">
+            <div class="text-4xl mb-3">⭐</div>
+            <h3 class="text-lg font-bold text-white mb-4 uppercase">Nodo Sincronizado</h3>
+            <button onclick="game.next()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs">SIGUIENTE SECTOR</button>
         </div>
     </div>
 
     <script>
-        // Sistema de Audio
-        const Sound = {
-            ctx: null,
-            init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-            play(f, t, d, v) {
-                this.init(); const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                o.type = t; o.frequency.setValueAtTime(f, this.ctx.currentTime);
-                g.gain.setValueAtTime(v, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + d);
-                o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + d);
-            },
-            ui() { this.play(600, 'sine', 0.1, 0.05); },
-            success() { this.play(440, 'sine', 0.2, 0.1); setTimeout(()=>this.play(880, 'sine', 0.2, 0.1), 100); },
-            error() { this.play(100, 'sawtooth', 0.4, 0.1); }
-        };
-
         const game = {
             xp: 0,
-            topic: 'python',
-            editor: null,
-            topics: [
-                { id: 'python', name: 'Python', icon: '🐍', target: 'ACCESO_OK', d: 'Muestra un mensaje en consola.', ex: "print('ACCESO_OK')" },
-                { id: 'cpp', name: 'C++', icon: '⚙️', target: 'SISTEMA_UP', d: 'Controlador de hardware.', ex: "cout << 'SISTEMA_UP';" },
-                { id: 'sql', name: 'SQL', icon: '🗄️', target: 'SELECT', d: 'Búsqueda en registros.', ex: "SELECT * FROM db;" },
-                { id: 'redes', name: 'Redes', icon: '📡', target: '443', d: 'Puerto de comunicación segura.', ex: "PORT 443" },
-                { id: 'seguridad', name: 'CyberSec', icon: '🛡️', target: 'SHA256', d: 'Firma de integridad.', ex: "HASH SHA256" },
-                { id: 'ia', name: 'IA', icon: '🧠', target: 'NEURON', d: 'Iniciando red neuronal.', ex: "INIT NEURON" },
-                { id: 'html', name: 'Web Dev', icon: '🌐', target: 'BODY', d: 'Etiqueta raíz de contenido.', ex: "TAG BODY" },
-                { id: 'git', name: 'Git', icon: '🌿', target: 'COMMIT', d: 'Guardado de cambios.', ex: "GIT COMMIT" },
-                { id: 'linux', name: 'Kernel', icon: '💻', target: 'ROOT', d: 'Usuario administrador.', ex: "USER ROOT" },
-                { id: 'data', name: 'Estructuras', icon: '📊', target: 'STACK', d: 'Pila de datos LIFO.', ex: "TYPE STACK" },
-                { id: 'logic', name: 'Lógica', icon: '🧩', target: 'TRUE', d: 'Valor booleano positivo.', ex: "VAL TRUE" },
-                { id: 'binary', name: 'Binario', icon: '🔢', target: '1010', d: 'Bits de procesamiento.', ex: "BIN 1010" }
+            cur: 'python',
+            cm: null,
+            levels: [
+                { id: 'python', name: 'Python', icon: '🐍', target: 'ACCESO_OK', d: 'Muestra un mensaje en consola.', code: "print('ACCESO_OK')" },
+                { id: 'cpp', name: 'C++', icon: '⚙️', target: 'SISTEMA_UP', d: 'Comunicación de bajo nivel.', code: "cout << 'SISTEMA_UP';" },
+                { id: 'sql', name: 'SQL', icon: '🗄️', target: 'SELECT', d: 'Consultas a bases de datos.', code: "SELECT * FROM data;" },
+                { id: 'html', name: 'Frontend', icon: '🌐', target: 'BODY', d: 'Estructura visual web.', code: "TAG BODY" },
+                { id: 'linux', name: 'Linux', icon: '💻', target: 'ROOT', d: 'Usuario administrador.', code: "USER ROOT" },
+                { id: 'git', name: 'Git', icon: '🌿', target: 'COMMIT', d: 'Control de versiones.', code: "GIT COMMIT" },
+                { id: 'redes', name: 'Redes', icon: '📡', target: '443', d: 'Puerto seguro HTTPS.', code: "PORT 443" },
+                { id: 'sec', name: 'Security', icon: '🛡️', target: 'SHA256', d: 'Algoritmo de cifrado.', code: "ALGO SHA256" },
+                { id: 'ia', name: 'I.A.', icon: '🧠', target: 'NEURON', d: 'Nodo de inteligencia.', code: "INIT NEURON" },
+                { id: 'data', name: 'Data', icon: '📊', target: 'STACK', d: 'Estructura de pila.', code: "TYPE STACK" },
+                { id: 'logic', name: 'Logic', icon: '🧩', target: 'TRUE', d: 'Operación booleana.', code: "VAL TRUE" },
+                { id: 'bin', name: 'Binary', icon: '🔢', target: '1010', d: 'Código de máquina.', code: "BIN 1010" }
             ],
 
             init() {
-                this.editor = CodeMirror.fromTextArea(document.getElementById('editor-raw'), {
+                this.cm = CodeMirror.fromTextArea(document.getElementById('real-editor'), {
                     lineNumbers: true, theme: "material-ocean", lineWrapping: true,
-                    inputStyle: "contenteditable"
+                    inputStyle: "contenteditable", spellcheck: false
                 });
-                this.renderGrid();
-                document.addEventListener('touchstart', () => Sound.init(), { once: true });
+                this.renderMap();
+                this.updateUI();
+                // Ajuste para evitar que el teclado mueva el layout en algunos Android
+                window.visualViewport.addEventListener('resize', () => {
+                    document.body.style.height = window.visualViewport.height + 'px';
+                });
             },
 
-            renderGrid() {
-                const grid = document.getElementById('map-grid');
-                grid.innerHTML = this.topics.map(t => `
-                    <button onclick="game.selectTopic('${t.id}')" class="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-left active:bg-slate-800 transition-colors">
-                        <span class="text-2xl mb-1 block">${t.icon}</span>
-                        <span class="text-[10px] font-bold block text-white uppercase">${t.name}</span>
-                        <span class="text-[8px] text-slate-500 uppercase tracking-tighter">Online</span>
+            renderMap() {
+                const g = document.getElementById('map-grid');
+                g.innerHTML = this.levels.map(l => `
+                    <button onclick="game.select('${l.id}')" class="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-left active:bg-slate-800">
+                        <span class="text-xl mb-1 block">${l.icon}</span>
+                        <span class="text-[10px] font-bold text-white block">${l.name}</span>
                     </button>
                 `).join('');
             },
 
-            selectTopic(id) {
-                Sound.ui();
-                this.topic = id;
-                const data = this.topics.find(t => t.id === id);
-                document.getElementById('lvl-title').innerText = data.name;
-                document.getElementById('lvl-desc').innerText = data.d;
-                document.getElementById('lvl-example').innerText = data.ex;
-                document.getElementById('lvl-mission').innerText = "Imprime: " + data.target;
-                this.editor.setValue("");
-                this.switchTab('docs');
+            select(id) {
+                this.cur = id;
+                const l = this.levels.find(x => x.id === id);
+                document.getElementById('topic-display').innerText = l.name;
+                document.getElementById('m-title').innerText = l.name;
+                document.getElementById('m-desc').innerText = l.d;
+                document.getElementById('m-code').innerText = l.code;
+                document.getElementById('m-goal').innerText = "Imprime: " + l.target;
+                this.cm.setValue("");
+                this.nav('docs');
             },
 
             run() {
-                const raw = this.editor.getValue().trim();
-                const out = document.getElementById('output-text');
-                this.switchTab('console');
+                const val = this.cm.getValue().trim();
+                const out = document.getElementById('cons-output');
+                this.nav('console');
                 
-                out.innerHTML = `<span class="text-slate-500">> Ejecutando script...\n</span>`;
+                out.innerHTML = `<span class="opacity-50">> Ejecutando...</span>\n`;
                 
-                // Extracción segura
-                let captured = "";
-                const match = raw.match(/['"](.*?)['"]/);
-                if (match) captured = match[1];
-                else captured = raw.split(/[\s\(\)\<\<\;\:]+/).filter(w => w.length > 0).pop() || "";
+                let res = "";
+                const m = val.match(/['"](.*?)['"]/);
+                if(m) res = m[1];
+                else res = val.split(/[\s\(\)\<\<\;\:]+/).filter(w => w.length > 0).pop() || "";
 
-                out.innerHTML += `> SALIDA: ${captured}\n`;
+                out.innerHTML += `> RESULTADO: ${res}\n`;
 
-                const target = this.topics.find(t => t.id === this.topic).target;
-
-                if (captured.toUpperCase() === target.toUpperCase()) {
-                    Sound.success();
-                    out.innerHTML += `<span class="text-white font-bold">\n[OK] VERIFICACIÓN CORRECTA.</span>`;
+                const target = this.levels.find(x => x.id === this.cur).target;
+                if(res.toUpperCase() === target.toUpperCase()) {
+                    out.innerHTML += `<span class="text-indigo-400">\n[EXITO] VALIDACIÓN COMPLETADA.</span>`;
                     setTimeout(() => {
                         document.getElementById('modal').classList.remove('hidden');
-                        confetti({ particleCount: 100, spread: 50, origin: { y: 0.8 } });
+                        confetti({ particleCount: 80, spread: 40, origin: { y: 0.7 } });
                     }, 400);
                 } else {
-                    Sound.error();
-                    out.innerHTML += `<span class="text-red-500 font-bold">\n[ERROR] DATOS INVÁLIDOS.</span>`;
+                    out.innerHTML += `<span class="text-red-500">\n[ERROR] DATOS INCORRECTOS.</span>`;
                 }
             },
 
-            nextLevel() {
-                Sound.ui();
+            next() {
                 this.xp += 100;
-                this.updateXP();
+                this.updateUI();
                 document.getElementById('modal').classList.add('hidden');
-                this.switchTab('map');
+                this.nav('map');
             },
 
-            updateXP() {
-                document.getElementById('xp-text').innerText = this.xp + " XP";
+            updateUI() {
+                document.getElementById('xp-display').innerText = this.xp + " XP";
                 document.getElementById('xp-bar').style.width = Math.min((this.xp/1200)*100, 100) + "%";
             },
 
-            switchTab(t) {
-                Sound.ui();
-                document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('tab-active'));
-                document.getElementById('view-' + t).classList.add('active');
-                document.getElementById('tab-' + t).classList.add('tab-active');
-                if(t === 'editor') setTimeout(() => this.editor.refresh(), 50);
+            nav(id) {
+                document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                document.getElementById('panel-' + id).classList.add('active');
+                document.getElementById('btn-' + id).classList.add('active');
+                if(id === 'editor') setTimeout(() => this.cm.refresh(), 100);
             }
         };
 
@@ -297,197 +303,4 @@
     </script>
 </body>
 </html>
-￼Enter<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CodeQuest: Global Knowledge</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-ocean.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/python/python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/clike/clike.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/sql/sql.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <style>
-        /* Bloqueo de scroll global para evitar que los botones desaparezcan */
-        html, body { 
-            height: 100%; 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            background-color: #020617;
-            color: #e2e8f0;
-        }
-
-        /* Contenedor principal tipo App */
-        .app-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        /* El área de contenido ocupa todo el espacio sobrante */
-        main {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .view-panel {
-            display: none;
-            height: 100%;
-            width: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .view-panel.active {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Ajuste específico para CodeMirror */
-        .CodeMirror { 
-            flex: 1;
-            height: auto !important;
-            font-size: 16px; 
-            background: #0f172a !important; 
-        }
-
-        /* Estilo de botones de navegación */
-        .nav-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: all 0.2s;
-            border-top: 3px solid transparent;
-        }
-
-        .tab-active { 
-            color: #6366f1; 
-            border-top-color: #6366f1;
-            background: rgba(99, 102, 241, 0.05); 
-        }
-
-        .terminal-text {
-            font-family: 'Fira Code', 'Courier New', monospace;
-            color: #4ade80;
-            line-height: 1.5;
-        }
-    </style>
-</head>
-<body>
-
-iv class="app-wrapper">
-        <!-- Header Fijo -->
-        <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-lg z-20">
-            <div class="flex items-center gap-2">
-                <div class="w-7 h-7 bg-indigo-600 rounded flex items-center justify-center font-bold text-white text-xs">CQ</div>
-                <span id="topic-label" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">SISTEMA</span>
-            </div>
-            <div class="flex flex-col items-end">
-                <div class="flex items-center gap-2">
-                    <span id="rank-text" class="text-[9px] font-bold text-indigo-400 uppercase">RECLUTA</span>
-                    <span id="xp-text" class="text-[10px] font-mono text-white">0 XP</span>
-                </div>
-                <div class="w-20 h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
-                    <div id="xp-bar" class="bg-indigo-500 h-full w-0 transition-all duration-500"></div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Contenido Dinámico -->
-        <main>
-            <!-- 1. MAPA -->
-            <div id="view-map" class="view-panel active p-4">
-                <h2 class="text-xl font-bold text-white mb-1">Sectores de Red</h2>
-                <p class="text-[11px] text-slate-400 mb-4">Selecciona un nodo de datos.</p>
-                <div class="grid grid-cols-2 gap-3" id="map-grid"></div>
-            </div>
-
-            <!-- 2. MISIÓN -->
-            <div id="view-docs" class="view-panel p-6">
-                <h2 id="lvl-title" class="text-2xl font-bold text-white mb-2 italic">Misión</h2>
-                <div class="bg-indigo-500/10 border-l-4 border-indigo-500 p-4 rounded-r-xl mb-4">
-                    <p id="lvl-desc" class="text-sm text-indigo-100"></p>
-                </div>
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6 font-mono text-xs text-indigo-300">
-                    <span class="text-[10px] text-slate-500 uppercase block mb-1">Guía:</span>
-                    <div id="lvl-example"></div>
-                </div>
-                <div class="bg-indigo-600 p-5 rounded-2xl shadow-xl mt-auto">
-                    <p id="lvl-mission" class="text-white text-sm font-bold"></p>
-                </div>
-            </div>
-
-            <!-- 3. EDITOR -->
-            <div id="view-editor" class="view-panel !p-0">
-                <div class="flex-1 flex flex-col overflow-hidden">
-                    <textarea id="editor-raw"></textarea>
-                </div>
-                <div class="p-4 bg-slate-900 border-t border-slate-800 shrink-0">
-                    <button onclick="game.run()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl text-xs tracking-widest active:scale-95 transition-transform shadow-lg">VALIDAR CÓDIGO</button>
-                </div>
-            </div>
-
-            <!-- 4. CONSOLA -->
-            <div id="view-console" class="view-panel p-4 bg-black">
-                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                    <span class="text-[10px] font-bold text-green-500 tracking-widest uppercase">Kernel Output</span>
-                    <button onclick="game.switchTab('editor')" class="text-[9px] bg-slate-800 px-3 py-1 rounded text-slate-400">VOLVER</button>
-                </div>
-                <div id="output-text" class="terminal-text text-sm whitespace-pre-wrap"></div>
-            </div>
-        </main>
-
-        <!-- Navegación Inferior (Siempre visible) -->
-        <nav class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0 z-30">
-            <button onclick="game.switchTab('map')" id="tab-map" class="nav-btn tab-active">
-                <span class="text-[10px] font-black uppercase tracking-tighter">Explorar</span>
-            </button>
-            <button onclick="game.switchTab('docs')" id="tab-docs" class="nav-btn">
-                <span class="text-[10px] font-black uppercase tracking-tighter">Misión</span>
-            </button>
-            <button onclick="game.switchTab('editor')" id="tab-editor" class="nav-btn">
-                <span class="text-[10px] font-black uppercase tracking-tighter">Editor</span>
-            </button>
-        </nav>
-    </div>
-
-    <!-- Modal Éxito -->
-    <div id="modal" class="hidden fixed inset-0 z-50 bg-slate-950/95 flex items-center justify-center p-8 backdrop-blur-sm">
-        <div class="bg-slate-900 border border-indigo-500/50 p-8 rounded-[2rem] w-full max-w-xs text-center shadow-2xl">
-            <div class="text-4xl mb-4">⚡</div>
-            <h3 class="text-xl font-bold text-white mb-2">INYECCIÓN EXITOSA</h3>
-            <button onclick="game.nextLevel()" class="mt-6 w-full bg-indigo-600 text-white font-bold py-4 rounded-xl text-[10px] tracking-widest">CONTINUAR</button>
-        </div>
-    </div>
-
-    <script>
-        // Sistema de Audio
-        const Sound = {
-            ctx: null,
-            init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-            play(f, t, d, v) {
-                this.init(); const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                o.type = t; o.frequency.setValueAtTime(f, this.ctx.currentTime);
-                g.gain.setValueAtTime(v, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + d);
-                o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + d);
-            },
-            ui() { this.play(600, 'sine', 0.1, 0.05); },
-            success() { this.play(440, 'sine', 0.2, 0.1); setTimeout(()=>this.play(880, 'sine', 0.2, 0.1), 100); },
-            error() { this.play(100, 'sawtooth', 0.4, 0.1); }
-        };
-
-        const game = {
-            xp: 0,
-            topic: 'python',
