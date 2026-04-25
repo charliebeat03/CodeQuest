@@ -20,7 +20,7 @@
         body { 
             font-family: system-ui, -apple-system, sans-serif; 
             overflow: hidden; 
-            height: 100dvh; /* Usa dynamic viewport height */
+            height: 100dvh;
             background-color: #020617; 
             display: flex;
             flex-direction: column;
@@ -35,14 +35,11 @@
         .view-panel.active { display: flex; flex-direction: column; }
         .btn-game { transition: transform 0.1s; touch-action: manipulation; }
         .btn-game:active { transform: scale(0.95); }
-        
-        /* Ajuste para que la consola no tape la navegación */
         #view-console { padding-bottom: 2rem; }
     </style>
 </head>
 <body class="text-slate-200">
 
-    <!-- Header con padding superior para notch -->
     <header class="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-xl" style="padding-top: var(--sat)">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg">CQ</div>
@@ -52,14 +49,12 @@
             </select>
         </div>
         <div class="text-right">
-            <div id="progreso-badge" class="text-[10px] text-indigo-400 font-bold tracking-widest">ETAPA 1/75</div>
+            <div id="progreso-badge" class="text-[10px] text-indigo-400 font-bold tracking-widest">ETAPA 1/6</div>
             <div id="type-label" class="text-[8px] uppercase font-black text-slate-500">Iniciando</div>
         </div>
     </header>
 
-    <!-- Contenido Principal Dinámico -->
     <main id="main-content" class="flex-1 overflow-hidden relative">
-        <!-- Panel Misión -->
         <div id="view-docs" class="view-panel active p-5">
             <h2 id="lvl-title" class="text-2xl font-bold text-white mb-2">Cargando...</h2>
             <div id="concept-box" class="bg-indigo-500/10 border-l-4 border-indigo-500 p-3 rounded mb-4">
@@ -78,7 +73,6 @@
             </div>
         </div>
 
-        <!-- Panel Editor -->
         <div id="view-editor" class="view-panel">
             <div class="flex-1 overflow-hidden bg-[#0f172a]">
                 <textarea id="editor-raw"></textarea>
@@ -89,7 +83,6 @@
             </div>
         </div>
 
-        <!-- Panel Consola -->
         <div id="view-console" class="view-panel bg-black p-5 font-mono">
             <div class="flex justify-between mb-4 border-b border-white/10 pb-2">
                 <span class="text-[10px] text-green-500 font-bold tracking-tighter uppercase">Consola de Salida</span>
@@ -99,7 +92,6 @@
         </div>
     </main>
 
-    <!-- Navegación Inferior (Fija abajo) -->
     <nav class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0" style="padding-bottom: var(--sab)">
         <button onclick="switchView('docs')" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn" id="tab-docs">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
@@ -115,7 +107,6 @@
         </button>
     </nav>
 
-    <!-- Modal Éxito -->
     <div id="modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 flex items-center justify-center p-8 backdrop-blur-sm">
         <div class="bg-slate-900 border border-indigo-500/30 p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl">
             <div class="text-5xl mb-4">🚀</div>
@@ -126,7 +117,7 @@
     </div>
 
     <script>
-        // --- AUDIO ENGINE ---
+        // --- AUDIO ENGINE (sin cambios) ---
         const SFX = {
             ctx: null,
             init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
@@ -158,7 +149,7 @@
             }
         };
 
-        // --- NIVELES ---
+        // --- NIVELES (sin cambios) ---
         const base = [
             {
                 title: "Iniciación de Consola",
@@ -234,6 +225,122 @@
             setTimeout(() => state.editor.refresh(), 150);
         }
 
+        // ========== NUEVO: Motor de simulación básico ==========
+        function simulateExecution(code, lang) {
+            // Limpiar caracteres invisibles
+            code = code.replace(/[\u200B-\u200D\uFEFF]/g, '');
+            const lines = code.split('\n');
+            const vars = {};
+            let output = '';
+
+            // Pequeño evaluador de expresiones (soporta números, strings, variables y operadores básicos)
+            function evaluate(expr) {
+                expr = expr.trim();
+                if (expr === '') return '';
+                // Reemplazar variables por sus valores (cuidado con nombres dentro de strings)
+                const varNames = Object.keys(vars).sort((a,b)=>b.length-a.length); // más largos primero
+                let processed = expr;
+                // Protección simple: no reemplazar dentro de comillas
+                // Por simplicidad asumimos que las variables no están entrecomilladas
+                for (let v of varNames) {
+                    // Solo reemplazar palabra completa (con límites de palabra)
+                    const re = new RegExp('\\b' + v + '\\b', 'g');
+                    processed = processed.replace(re, vars[v]);
+                }
+                // Evaluar expresión matemática/concatenación
+                try {
+                    // Usamos Function en modo estricto para evaluar; solo se permiten números, strings y operadores.
+                    // Esto podría ser peligroso si el código contiene llamadas a funciones, pero en este entorno controlado aceptamos.
+                    const result = Function('"use strict"; return (' + processed + ')')();
+                    // Si es string pero viene de una variable numérica, respetamos el tipo
+                    return result;
+                } catch(e) {
+                    // Si falla, devolvemos la expresión sin evaluar (p.ej. mal formada)
+                    return expr;
+                }
+            }
+
+            if (lang === 'python') {
+                for (let line of lines) {
+                    line = line.trim();
+                    if (!line || line.startsWith('#')) continue;
+                    // Asignación simple: var = expr
+                    const assignMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
+                    if (assignMatch) {
+                        const varName = assignMatch[1];
+                        const valueExpr = assignMatch[2];
+                        // Evaluar la expresión y guardar
+                        vars[varName] = evaluate(valueExpr);
+                        continue;
+                    }
+                    // print(...)
+                    const printMatch = line.match(/^print\s*\((.*)\)\s*$/);
+                    if (printMatch) {
+                        const argsStr = printMatch[1];
+                        // Separar argumentos por coma (simplificado, no maneja comillas con comas)
+                        const args = argsStr.split(',').map(a => a.trim());
+                        const evaluated = args.map(arg => {
+                            // Si es un literal de string ('...' o "...")
+                            if ((arg.startsWith("'") && arg.endsWith("'")) || (arg.startsWith('"') && arg.endsWith('"'))) {
+                                return arg.slice(1, -1);
+                            }
+                            // Evaluar como expresión
+                            return evaluate(arg);
+                        });
+                        output += evaluated.join(' ') + '\n';
+                    }
+                }
+            } else if (lang === 'cpp') {
+                let insideMain = false;
+                for (let line of lines) {
+                    line = line.trim();
+                    if (!line) continue;
+                    if (line.startsWith('#') || line.startsWith('using namespace')) continue;
+                    if (line.includes('int main()')) { insideMain = true; continue; }
+                    if (!insideMain) continue;
+                    if (line === '{' || line === '}') continue;
+                    
+                    // Asignación con o sin tipo: int var = expr; o var = expr;
+                    const assignType = line.match(/^(int|float|double|string|char)\s+(\w+)\s*=\s*(.+?);\s*$/);
+                    const assignPlain = line.match(/^(\w+)\s*=\s*(.+?);\s*$/);
+                    if (assignType) {
+                        const varName = assignType[2];
+                        const valueExpr = assignType[3];
+                        vars[varName] = evaluate(valueExpr);
+                        continue;
+                    } else if (assignPlain) {
+                        const varName = assignPlain[1];
+                        const valueExpr = assignPlain[2];
+                        vars[varName] = evaluate(valueExpr);
+                        continue;
+                    }
+                    
+                    // cout << ...
+                    const coutMatch = line.match(/^cout\s*(<<\s*.+?);\s*$/);
+                    if (coutMatch) {
+                        // Extraer la cadena después de cout
+                        const streamPart = line.replace(/^cout\s*/, '').replace(/;\s*$/, '').trim();
+                        // Dividir por <<
+                        const parts = streamPart.split('<<').map(p => p.trim()).filter(p => p);
+                        let lineOutput = '';
+                        for (let p of parts) {
+                            if (p === 'endl') {
+                                lineOutput += '\n';
+                            } else if ((p.startsWith('"') && p.endsWith('"')) || (p.startsWith("'") && p.endsWith("'"))) {
+                                lineOutput += p.slice(1, -1);
+                            } else {
+                                const val = evaluate(p);
+                                if (typeof val === 'string') lineOutput += val;
+                                else lineOutput += String(val);
+                            }
+                        }
+                        output += lineOutput;
+                    }
+                }
+            }
+            return output.trimEnd();
+        }
+
         function runCode() {
             SFX.play('click');
             state.editor.save(); 
@@ -243,31 +350,12 @@
             switchView('console');
 
             setTimeout(() => {
-                let out = "";
-                const cleanCode = code.replace(/[\u200B-\u200D\uFEFF]/g, ''); 
-                
-                if(state.lang === 'python') {
-                    // Simulación simple de salida
-                    const matches = cleanCode.match(/print\s*\(\s*(.*?)\s*\)/g);
-                    if(matches) out = matches.map(m => {
-                        let inner = m.match(/\((.*)\)/)[1].trim();
-                        return inner.replace(/['"]/g, '');
-                    }).join("\n");
-                } else {
-                    const matches = cleanCode.match(/cout\s*<<\s*(.*?)\s*;/g);
-                    if(matches) out = matches.map(m => {
-                        let inner = m.match(/<<\s*(.*)/)[1].replace(/;/,'').trim();
-                        return inner.replace(/['"]/g, '').replace(/<<\s*endl/g, '').trim();
-                    }).join("\n");
-                }
-
-                // Lógica de cálculo para retos específicos
-                if(cleanCode.includes("+") && (cleanCode.match(/[a|5]/) && cleanCode.match(/[b|2]/))) out = "7";
-
-                outEl.innerText = out || "Salida vacía.";
+                // Usar el nuevo motor de simulación
+                const simulatedOut = simulateExecution(code, state.lang);
+                outEl.innerText = simulatedOut || "Salida vacía.";
                 
                 const currentLvl = levels[state.prog[state.lang]];
-                if(currentLvl[state.lang].check(cleanCode, out)) {
+                if (currentLvl[state.lang].check(code, simulatedOut)) {
                     SFX.play('win');
                     document.getElementById('modal').classList.remove('hidden');
                     confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
@@ -278,6 +366,7 @@
             }, 800);
         }
 
+        // Resto de funciones sin cambios
         function switchView(v) {
             SFX.play('click');
             document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
@@ -312,7 +401,6 @@
             initEditor();
             render();
             switchView('docs');
-            // Inicializar audio con toque de usuario
             document.body.addEventListener('touchstart', () => SFX.init(), {once: true});
         };
     </script>
