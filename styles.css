@@ -39,3 +39,41 @@ body {
 #view-console {
     padding-bottom: 2rem;
 }
+
+/* Estilos para el sistema de estrellas */
+.star {
+    color: #fbbf24;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+.star.empty {
+    color: #4b5563;
+}
+
+/* Botón de pista */
+.hint-btn {
+    background: #1e293b;
+    color: #94a3b8;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+.hint-btn:hover {
+    background: #334155;
+    color: white;
+}
+.hint-text {
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    background: #1e293b;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Fix intro.js tooltip en móvil */
+.introjs-tooltip {
+    min-width: 250px;
+}

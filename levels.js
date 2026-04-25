@@ -6,6 +6,7 @@ const levels = [
         type: 'TEORÍA',
         title: "Iniciación de Consola",
         concept: "Mostrar mensajes es el primer paso de todo programador.",
+        hint: "Usa print('texto') en Python o cout << \"texto\"; en C++.",
         python: {
             ex: "print('Hola')",
             mission: "Imprime exactamente 'SISTEMA OK'",
@@ -23,6 +24,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Iniciación de Consola (Reto 1)",
         concept: "Practica la impresión de varios mensajes.",
+        hint: "Puedes poner dos print (o cout) seguidos, o usar \\n dentro de un string.",
         python: {
             ex: "print('Hola')\nprint('Mundo')",
             mission: "Imprime 'CARGANDO...' y luego 'LISTO' (cada uno en línea separada).",
@@ -40,6 +42,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Iniciación de Consola (Reto 2)",
         concept: "Ahora imprime un número.",
+        hint: "Simplemente escribe print(2024) o cout << 2024; sin comillas.",
         python: {
             ex: "print(2024)",
             mission: "Imprime el número 2024.",
@@ -61,14 +64,15 @@ const levels = [
         type: 'TEORÍA',
         title: "Asignación de Memoria",
         concept: "Las variables reservan un espacio en memoria para guardar datos.",
+        hint: "En Python: variable = valor. En C++: tipo variable = valor; Recuerda usar cout o print luego.",
         python: {
-            ex: "x = 5",
+            ex: "x = 5\nprint(x)",
             mission: "Crea una variable 'puntos' con valor 100 e imprímela.",
             init: "",
             check: (code, output) => code.includes("puntos") && output.includes("100")
         },
         cpp: {
-            ex: "int x = 5;",
+            ex: "int x = 5;\ncout << x;",
             mission: "Declara 'int puntos = 100;' y muéstrala con cout.",
             init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}",
             check: (code, output) => code.includes("puntos") && output.includes("100")
@@ -78,14 +82,15 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Asignación de Memoria (Reto 1)",
         concept: "Practica crear variables de texto y mostrarlas.",
+        hint: "Para texto usa comillas. En Python no necesitas tipo; en C++ declara string.",
         python: {
-            ex: "x = 'Hola'",
+            ex: "x = 'Hola'\nprint(x)",
             mission: "Crea una variable 'saludo' con el texto 'Hola Mundo' e imprímela.",
             init: "",
             check: (code, output) => output.includes("Hola Mundo")
         },
         cpp: {
-            ex: 'string x = "Hola";',
+            ex: 'string x = "Hola";\ncout << x;',
             mission: "Declara 'string saludo = \"Hola Mundo\";' y muéstrala.",
             init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}",
             check: (code, output) => output.includes("Hola Mundo")
@@ -95,6 +100,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Asignación de Memoria (Reto 2)",
         concept: "Trabaja con números y variables.",
+        hint: "Crea dos variables, suma sus valores e imprime el resultado.",
         python: {
             ex: "a = 5\nb = 2\nprint(a + b)",
             mission: "Crea 'a = 7' y 'b = 3', luego imprime la suma (debe salir 10).",
@@ -116,6 +122,7 @@ const levels = [
         type: 'TEORÍA',
         title: "Operadores Aritméticos",
         concept: "Puedes hacer cálculos con +, -, *, /.",
+        hint: "Crea dos variables y muestra el resultado de la división. En C++ si los dos son enteros, la división es entera.",
         python: {
             ex: "a = 20\nb = 4\nprint(a / b)",
             mission: "Crea 'a = 20' y 'b = 4' e imprime la división (a / b). Debe mostrar 5.",
@@ -133,6 +140,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Operadores Aritméticos (Reto 1)",
         concept: "Usa resta y multiplicación.",
+        hint: "Para multiplicar usa * (asterisco).",
         python: {
             ex: "x = 15\ny = 7\nprint(x * y)",
             mission: "Crea 'x = 15' e 'y = 7' e imprime el producto (x * y). Debe mostrar 105.",
@@ -150,6 +158,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Operadores Aritméticos (Reto 2)",
         concept: "Combina operadores con paréntesis.",
+        hint: "Usa paréntesis ( ) para agrupar y calcular en el orden deseado.",
         python: {
             ex: "total = (8 + 2) * 3\nprint(total)",
             mission: "Crea 'total = (8 + 2) * 3' e imprime el resultado (30).",
@@ -170,7 +179,8 @@ const levels = [
     {
         type: 'TEORÍA',
         title: "Strings y Concatenación",
-        concept: "Une textos con el operador + (Python) o << (C++).",
+        concept: "Puedes unir textos con + en Python o << en C++.",
+        hint: "En Python usa print('Hola ' + nombre). En C++ usa cout << \"Hola \" << nombre;",
         python: {
             ex: 'nombre = "Ana"\nprint("Hola " + nombre)',
             mission: 'Crea "nombre = \'Juan\'" e imprime "Hola Juan".',
@@ -188,6 +198,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Strings y Concatenación (Reto 1)",
         concept: "Une más de dos textos.",
+        hint: "Puedes concatenar varias veces: texto1 + \"-\" + texto2",
         python: {
             ex: 'color1 = "Verde"\ncolor2 = "Amarillo"\nprint(color1 + "-" + color2)',
             mission: 'Crea "color1 = \'Verde\'" y "color2 = \'Amarillo\'" e imprime "Verde-Amarillo".',
@@ -195,7 +206,7 @@ const levels = [
             check: (code, output) => output.includes("Verde-Amarillo")
         },
         cpp: {
-            ex: 'string a = "Rojo", b = "Azul";\ncout << a << " y " << b;',
+            ex: 'string a = "Rojo", b = "Azul";\ncout << a << "-" << b;',
             mission: 'Declara dos strings y muestra "Verde-Amarillo".',
             init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}",
             check: (code, output) => output.includes("Verde-Amarillo")
@@ -205,6 +216,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Strings y Concatenación (Reto 2)",
         concept: "Mezcla números y texto en una salida.",
+        hint: "En Python puedes usar str(edad) o simplemente separar con coma en print. En C++ solo <<.",
         python: {
             ex: 'edad = 25\nprint("Tengo " + str(edad) + " años")',
             mission: 'Crea "edad = 30" e imprime "Edad: 30" (usa comas en print o conversión).',
@@ -226,6 +238,7 @@ const levels = [
         type: 'TEORÍA',
         title: "Condicional if",
         concept: "Toma decisiones con if y else.",
+        hint: "En Python es 'if condición:' (dos puntos) y luego código indentado. En C++ es if (condición) { ... }.",
         python: {
             ex: "x = 10\nif x > 5:\n    print('Mayor')\nelse:\n    print('Menor')",
             mission: "Crea 'x = 10'. Si x > 5 imprime 'Mayor', si no imprime 'Menor'.",
@@ -243,6 +256,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Condicional if (Reto 1)",
         concept: "Usa if-else con una condición falsa.",
+        hint: "Escribe la misma estructura pero con x = 3 para que entre al else.",
         python: {
             ex: "x = 3\nif x > 5:\n    print('A')\nelse:\n    print('B')",
             mission: "Crea 'x = 3' e imprime 'B' porque no es mayor que 5.",
@@ -260,6 +274,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Condicional if (Reto 2)",
         concept: "Practica con else if.",
+        hint: "En Python es 'elif', en C++ 'else if'. Puedes poner varias condiciones.",
         python: {
             ex: "nota = 7\nif nota >= 9:\n    print('A')\nelif nota >= 7:\n    print('B')\nelse:\n    print('C')",
             mission: "Crea 'nota = 7' e imprime 'B'.",
@@ -281,6 +296,7 @@ const levels = [
         type: 'TEORÍA',
         title: "Bucle while",
         concept: "Repite mientras se cumpla una condición.",
+        hint: "En Python: while condición: (indentado). En C++: while (condición) { ... }. Recuerda incrementar la variable para no entrar en bucle infinito.",
         python: {
             ex: "i = 0\nwhile i < 3:\n    print(i)\n    i += 1",
             mission: "Usa while para imprimir los números del 0 al 2 (cada uno en línea nueva).",
@@ -298,6 +314,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Bucle while (Reto 1)",
         concept: "Acumula valores en un while.",
+        hint: "Crea una variable total = 0 antes del while y otra i = 1. Dentro suma i al total y aumenta i.",
         python: {
             ex: "i = 1\ntotal = 0\nwhile i <= 3:\n    total += i\n    i += 1\nprint(total)",
             mission: "Suma los números del 1 al 4 usando while e imprime 10.",
@@ -315,6 +332,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Bucle while (Reto 2)",
         concept: "Cuenta regresiva con while.",
+        hint: "Inicia una variable n = 3. Mientras n > 0: imprime n y decrementa en 1.",
         python: {
             ex: "n = 5\nwhile n > 0:\n    print(n)\n    n -= 1",
             mission: "Imprime una cuenta regresiva desde 3 hasta 1 (cada número en línea nueva).",
@@ -336,6 +354,7 @@ const levels = [
         type: 'TEORÍA',
         title: "Bucle for (range)",
         concept: "Recorre una secuencia de números con for.",
+        hint: "Python: for i in range(3): (0..2). C++: for(int i=0; i<3; i++)",
         python: {
             ex: "for i in range(3):\n    print(i)",
             mission: "Usa for para imprimir 0,1,2 (uno por línea).",
@@ -353,6 +372,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Bucle for (Reto 1)",
         concept: "Suma acumulada con for.",
+        hint: "Usa range(1,6) en Python o for(int i=1; i<=5; i++) en C++.",
         python: {
             ex: "total = 0\nfor i in range(1, 6):\n    total += i\nprint(total)",
             mission: "Suma los números del 1 al 5 usando for e imprime 15.",
@@ -370,6 +390,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Bucle for (Reto 2)",
         concept: "Itera sobre una lista (Python) o array (C++).",
+        hint: "En Python: for n in lista: print(n). En C++ recorre con índice.",
         python: {
             ex: "nums = [10, 20, 30]\nfor n in nums:\n    print(n)",
             mission: "Crea una lista [1,2,3] e imprime cada elemento en línea separada.",
@@ -390,7 +411,8 @@ const levels = [
     {
         type: 'TEORÍA',
         title: "Listas y Arrays",
-        concept: "Colecciones de valores indexados.",
+        concept: "Colecciones de valores indexados (0,1,2...).",
+        hint: "Python: lista[indice]. C++: array[posición]. Recuerda que empiezan en 0.",
         python: {
             ex: "numeros = [10, 20, 30]\nprint(numeros[1])",
             mission: "Crea una lista con [4, 8, 12] e imprime el tercer elemento (12).",
@@ -408,6 +430,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Listas y Arrays (Reto 1)",
         concept: "Modifica un elemento de la lista/array.",
+        hint: "Asigna un nuevo valor a una posición con lista[1] = 99; y luego imprime ese elemento.",
         python: {
             ex: "nums = [10, 20, 30]\nnums[0] = 99\nprint(nums[0])",
             mission: "Crea una lista [1,2,3], cambia el segundo elemento a 99 e imprímelo.",
@@ -425,6 +448,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Listas y Arrays (Reto 2)",
         concept: "Recorre toda la colección con un for.",
+        hint: "Usa for sobre la lista o array e imprime cada elemento.",
         python: {
             ex: "nums = [100, 200, 300]\nfor n in nums:\n    print(n)",
             mission: "Crea [100, 200, 300] e imprime cada valor en línea separada.",
@@ -446,6 +470,7 @@ const levels = [
         type: 'TEORÍA',
         title: "Funciones Simples",
         concept: "Define bloques de código reutilizables.",
+        hint: "Python: def nombre(): ... indentado. C++: void nombre() { ... } Llamada: nombre();",
         python: {
             ex: "def saludar():\n    print('Hola Mundo')\nsaludar()",
             mission: "Define una función 'saludo()' que imprima 'Hola Mundo' y llámala.",
@@ -463,6 +488,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Funciones Simples (Reto 1)",
         concept: "Función con parámetros.",
+        hint: "En Python: def cuadrado(x): print(x*x). En C++: void cuadrado(int x) { cout << x*x; }",
         python: {
             ex: "def doble(x):\n    print(x * 2)\ndoble(4)",
             mission: "Define 'cuadrado(x)' que imprima x*x y pruébala con 5 (debe mostrar 25).",
@@ -480,6 +506,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Funciones Simples (Reto 2)",
         concept: "Función con retorno de valor.",
+        hint: "Usa 'return' para devolver el cálculo y luego imprime el resultado de la llamada.",
         python: {
             ex: "def suma(a, b):\n    return a + b\nprint(suma(3, 4))",
             mission: "Define 'multiplica(a,b)' que devuelva a*b e imprime multiplica(3,7) (21).",
@@ -495,12 +522,13 @@ const levels = [
     },
 
     // ==============================================
-    // BLOQUE 10: CLASES Y PROGRAMACIÓN ORIENTADA A OBJETOS
+    // BLOQUE 10: CLASES Y POO
     // ==============================================
     {
         type: 'TEORÍA',
         title: "Clases y Objetos",
         concept: "Define tus propios tipos con atributos y constructor.",
+        hint: "Python: class Perro: def __init__(self, nombre): self.nombre = nombre. C++: class Perro { public: string nombre; Perro(string n){ nombre=n; } };",
         python: {
             ex: "class Perro:\n    def __init__(self, nombre):\n        self.nombre = nombre\nm = Perro('Max')\nprint(m.nombre)",
             mission: "Crea una clase 'Perro' con constructor que reciba 'nombre' e imprímelo al instanciar con 'Max'.",
@@ -518,6 +546,7 @@ const levels = [
         type: 'PRÁCTICA',
         title: "Clases y Objetos (Reto 1)",
         concept: "Añade un método a la clase.",
+        hint: "Dentro de la clase define otro def (o void) que haga algo, y luego llámalo con instancia.metodo()",
         python: {
             ex: "class Perro:\n    def __init__(self, nombre):\n        self.nombre = nombre\n    def ladrar(self):\n        print('Guau')\np = Perro('Max')\np.ladrar()",
             mission: "Agrega un método 'ladrar()' a Perro que imprima 'Guau' y llámalo.",
@@ -534,10 +563,11 @@ const levels = [
     {
         type: 'PRÁCTICA',
         title: "Clases y Objetos (Reto 2)",
-        concept: "Herencia y polimorfismo básico.",
+        concept: "Herencia: una clase que extiende a otra y sobrescribe un método.",
+        hint: "En Python: class Coche(Vehiculo): y redefine el método. En C++: class Coche : public Vehiculo { ... override }.",
         python: {
-            ex: "class Animal:\n    def hablar(self):\n        pass\nclass Gato(Animal):\n    def hablar(self):\n        print('Miau')\nclass Perro(Animal):\n    def hablar(self):\n        print('Guau')\ndef sonido(animal):\n    animal.hablar()\nsonido(Gato())\nsonido(Perro())",
-            mission: "Crea una clase 'Vehiculo' con método 'arrancar()' que imprima 'Arrancado'. Luego 'Coche' que herede y sobrescriba con 'Motor encendido'. Instancia Coche y llama a arrancar().",
+            ex: "class Animal:\n    def hablar(self):\n        pass\nclass Gato(Animal):\n    def hablar(self):\n        print('Miau')\nclass Perro(Animal):\n    def hablar(self):\n        print('Guau')\ng = Gato()\ng.hablar()\np = Perro()\np.hablar()",
+            mission: "Crea clase 'Vehiculo' con método 'arrancar()' que imprima 'Arrancado'. Luego 'Coche' que herede y sobrescriba con 'Motor encendido'. Instancia Coche y llama a arrancar().",
             init: "",
             check: (code, output) => output.includes("Motor encendido")
         },
