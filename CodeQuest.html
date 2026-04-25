@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CodeQuest: Mobile Optimized</title>
+    <title>CodeQuest: De Cero a POO</title>
+
+    <!-- Dependencias externas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-ocean.min.css">
@@ -12,97 +14,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/clike/clike.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <style>
-        :root {
-            --sat: env(safe-area-inset-top);
-            --sab: env(safe-area-inset-bottom);
-        }
-        body { 
-            font-family: system-ui, -apple-system, sans-serif; 
-            overflow: hidden; 
-            height: 100dvh;
-            background-color: #020617; 
-            display: flex;
-            flex-direction: column;
-        }
-        .CodeMirror { height: 100% !important; font-size: 16px; background: #0f172a !important; }
-        .tab-active { 
-            color: #6366f1; 
-            background: rgba(99, 102, 241, 0.15);
-            border-top: 2px solid #6366f1;
-        }
-        .view-panel { display: none; flex: 1; overflow-y: auto; }
-        .view-panel.active { display: flex; flex-direction: column; }
-        .btn-game { transition: transform 0.1s; touch-action: manipulation; }
-        .btn-game:active { transform: scale(0.95); }
-        #view-console { padding-bottom: 2rem; }
-    </style>
+    <!-- Estilos propios -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="text-slate-200">
 
-    <header class="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-xl" style="padding-top: var(--sat)">
+    <header class="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-xl" style="padding-top: env(safe-area-inset-top)">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg">CQ</div>
-            <select id="lang-select" onchange="handleLangChange()" class="bg-slate-800 border-none text-[10px] font-bold text-slate-100 outline-none rounded-lg px-2 py-1">
+            <select id="lang-select" class="bg-slate-800 border-none text-[10px] font-bold text-slate-100 outline-none rounded-lg px-2 py-1">
                 <option value="python">PYTHON</option>
                 <option value="cpp">C++</option>
             </select>
         </div>
         <div class="text-right">
-            <div id="progreso-badge" class="text-[10px] text-indigo-400 font-bold tracking-widest">ETAPA 1/6</div>
+            <div id="progreso-badge" class="text-[10px] text-indigo-400 font-bold tracking-widest">ETAPA 1/30</div>
             <div id="type-label" class="text-[8px] uppercase font-black text-slate-500">Iniciando</div>
         </div>
     </header>
 
-    <main id="main-content" class="flex-1 overflow-hidden relative">
-        <div id="view-docs" class="view-panel active p-5">
-            <h2 id="lvl-title" class="text-2xl font-bold text-white mb-2">Cargando...</h2>
-            <div id="concept-box" class="bg-indigo-500/10 border-l-4 border-indigo-500 p-3 rounded mb-4">
-                <p id="concept-text" class="text-xs text-indigo-200 italic"></p>
-            </div>
-            <p id="lvl-desc" class="text-slate-400 text-sm mb-5"></p>
-            
-            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-4">
-                <span class="text-[10px] text-slate-500 font-bold block mb-2 uppercase">Sintaxis</span>
-                <pre id="lvl-example" class="text-xs text-indigo-300 font-mono overflow-x-auto"></pre>
-            </div>
+    <main id="main-content" class="flex-1 overflow-hidden relative"></main>
 
-            <div class="bg-indigo-600 p-4 rounded-2xl shadow-lg mt-auto mb-4">
-                <span class="text-[10px] text-indigo-200 font-bold block mb-1 uppercase">Misión</span>
-                <p id="lvl-mission" class="text-white text-sm font-bold leading-tight"></p>
-            </div>
-        </div>
-
-        <div id="view-editor" class="view-panel">
-            <div class="flex-1 overflow-hidden bg-[#0f172a]">
-                <textarea id="editor-raw"></textarea>
-            </div>
-            <div class="p-4 bg-slate-900 border-t border-slate-800 flex gap-2 shrink-0">
-                <button onclick="runCode()" class="btn-game flex-1 bg-indigo-600 text-white font-bold py-4 rounded-xl text-xs tracking-widest shadow-lg">VALIDAR CÓDIGO</button>
-                <button onclick="resetLvl()" class="btn-game px-6 bg-slate-800 text-slate-400 rounded-xl">⟲</button>
-            </div>
-        </div>
-
-        <div id="view-console" class="view-panel bg-black p-5 font-mono">
-            <div class="flex justify-between mb-4 border-b border-white/10 pb-2">
-                <span class="text-[10px] text-green-500 font-bold tracking-tighter uppercase">Consola de Salida</span>
-                <button onclick="clearConsole()" class="text-[10px] text-slate-500 bg-slate-900 px-2 py-1 rounded">CLEAR</button>
-            </div>
-            <div id="output-text" class="text-green-400 text-sm whitespace-pre-wrap leading-relaxed">Esperando ejecución...</div>
-        </div>
-    </main>
-
-    <nav class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0" style="padding-bottom: var(--sab)">
-        <button onclick="switchView('docs')" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn" id="tab-docs">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
+    <nav id="bottom-nav" class="h-16 bg-slate-900 border-t border-slate-800 flex items-stretch shrink-0" style="padding-bottom: env(safe-area-inset-bottom)">
+        <button id="tab-docs" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/>
+            </svg>
             <span class="text-[9px] font-bold uppercase tracking-widest">Misión</span>
         </button>
-        <button onclick="switchView('editor')" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn" id="tab-editor">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <button id="tab-editor" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
             <span class="text-[9px] font-bold uppercase tracking-widest">Editor</span>
         </button>
-        <button onclick="switchView('console')" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn" id="tab-console">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M7 8l3 3-3 3"/><path d="M12 14h4"/></svg>
+        <button id="tab-console" class="flex-1 flex flex-col items-center justify-center gap-1 tab-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="M7 8l3 3-3 3"/><path d="M12 14h4"/>
+            </svg>
             <span class="text-[9px] font-bold uppercase tracking-widest">Consola</span>
         </button>
     </nav>
@@ -111,298 +60,13 @@
         <div class="bg-slate-900 border border-indigo-500/30 p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl">
             <div class="text-5xl mb-4">🚀</div>
             <h3 class="text-xl font-bold text-white mb-2 tracking-tighter">¡LOGRADO!</h3>
-            <p class="text-slate-400 text-xs mb-6">Tu código ha pasado la prueba de integridad.</p>
-            <button onclick="nextLvl()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl tracking-widest text-[10px]">CONTINUAR</button>
+            <p class="text-slate-400 text-xs mb-6">Tu código ha pasado la prueba.</p>
+            <button id="btn-next" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl tracking-widest text-[10px]">CONTINUAR</button>
         </div>
     </div>
 
-    <script>
-        // --- AUDIO ENGINE (sin cambios) ---
-        const SFX = {
-            ctx: null,
-            init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-            play(type) {
-                try {
-                    this.init();
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain); gain.connect(this.ctx.destination);
-                    const now = this.ctx.currentTime;
-                    if(type === 'click') {
-                        osc.frequency.setValueAtTime(600, now);
-                        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-                        gain.gain.setValueAtTime(0.1, now);
-                        osc.start(); osc.stop(now + 0.1);
-                    } else if(type === 'win') {
-                        osc.type = 'square';
-                        [400, 500, 600].forEach((f, i) => { osc.frequency.setValueAtTime(f, now + i*0.1); });
-                        gain.gain.setValueAtTime(0.05, now);
-                        osc.start(); osc.stop(now + 0.3);
-                    } else if(type === 'fail') {
-                        osc.type = 'sawtooth';
-                        osc.frequency.setValueAtTime(200, now);
-                        osc.frequency.linearRampToValueAtTime(50, now + 0.3);
-                        gain.gain.setValueAtTime(0.1, now);
-                        osc.start(); osc.stop(now + 0.3);
-                    }
-                } catch(e) {}
-            }
-        };
-
-        // --- NIVELES (sin cambios) ---
-        const base = [
-            {
-                title: "Iniciación de Consola",
-                concept: "Mostrar mensajes es el primer paso de todo programador.",
-                python: { ex: "print('Hola')", mission: "Imprime 'SISTEMA OK'", check: (c,o)=>o.trim().toUpperCase().includes("SISTEMA OK") },
-                cpp: { ex: "cout << \"Hola\";", mission: "Muestra 'SISTEMA OK'", init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}", check: (c,o)=>o.trim().toUpperCase().includes("SISTEMA OK") },
-                practices: [
-                    { mission: "Imprime 'CARGANDO...' y luego 'LISTO'", check: (c,o)=>o.includes("CARGANDO") && o.includes("LISTO") },
-                    { mission: "Imprime el número 2024", check: (c,o)=>o.includes("2024") }
-                ]
-            },
-            {
-                title: "Asignación de Memoria",
-                concept: "Las variables reservan un espacio en memoria para guardar datos.",
-                python: { ex: "x = 5", mission: "Crea 'puntos = 100' e imprímela.", check: (c,o)=>c.includes("puntos") && o.includes("100") },
-                cpp: { ex: "int x = 5;", mission: "Crea 'int puntos = 100;' y muéstrala.", init: "#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}", check: (c,o)=>c.includes("puntos") && o.includes("100") },
-                practices: [
-                    { mission: "Crea 'a=5', 'b=2' e imprime la suma.", check: (c,o)=>o.includes("7") },
-                    { mission: "Crea 'msg=\"Run\"' e imprímelo.", check: (c,o)=>o.includes("Run") }
-                ]
-            }
-        ];
-
-        const levels = [];
-        base.forEach(l => {
-            levels.push({ type: 'TEORÍA', ...l });
-            l.practices.forEach((p, i) => {
-                levels.push({ 
-                    type: 'PRÁCTICA', 
-                    title: `${l.title} (Reto ${i+1})`,
-                    concept: "Demuestra tu lógica aplicada.",
-                    python: { ex: l.python.ex, mission: p.mission, check: p.check, init: "" },
-                    cpp: { ex: l.cpp.ex, mission: p.mission, check: p.check, init: l.cpp.init },
-                });
-            });
-        });
-
-        // --- APP LOGIC ---
-        let state = { lang: 'python', prog: { python: 0, cpp: 0 }, editor: null };
-
-        function initEditor() {
-            state.editor = CodeMirror.fromTextArea(document.getElementById('editor-raw'), {
-                lineNumbers: true, 
-                mode: "python", 
-                theme: "material-ocean",
-                indentUnit: 4, 
-                autoCloseBrackets: true, 
-                lineWrapping: true,
-                inputStyle: "contenteditable" 
-            });
-            state.editor.setSize("100%", "100%");
-            state.editor.on("change", () => state.editor.save());
-        }
-
-        function render() {
-            const idx = state.prog[state.lang];
-            if(idx >= levels.length) {
-                document.getElementById('main-content').innerHTML = "<div class='h-full flex flex-col items-center justify-center p-10 text-center'><div class='text-6xl mb-4'>🏆</div><h1 class='text-2xl font-bold'>¡CURSO COMPLETADO!</h1><p class='text-slate-400 mt-2'>Has dominado los fundamentos básicos de " + (state.lang == 'python' ? 'Python' : 'C++') + "</p></div>";
-                return;
-            }
-            const data = levels[idx];
-            const ld = data[state.lang];
-            document.getElementById('lvl-title').innerText = data.title;
-            document.getElementById('concept-text').innerText = data.concept;
-            document.getElementById('lvl-desc').innerText = data.type === 'TEORÍA' ? "Aprende la sintaxis base." : "Resuelve el problema lógico.";
-            document.getElementById('lvl-example').innerText = ld.ex;
-            document.getElementById('lvl-mission').innerText = ld.mission;
-            document.getElementById('progreso-badge').innerText = `ETAPA ${idx+1}/${levels.length}`;
-            document.getElementById('type-label').innerText = data.type;
-            
-            state.editor.setValue(ld.init || "");
-            state.editor.setOption("mode", state.lang === 'python' ? 'python' : 'text/x-c++src');
-            setTimeout(() => state.editor.refresh(), 150);
-        }
-
-        // ========== NUEVO: Motor de simulación básico ==========
-        function simulateExecution(code, lang) {
-            // Limpiar caracteres invisibles
-            code = code.replace(/[\u200B-\u200D\uFEFF]/g, '');
-            const lines = code.split('\n');
-            const vars = {};
-            let output = '';
-
-            // Pequeño evaluador de expresiones (soporta números, strings, variables y operadores básicos)
-            function evaluate(expr) {
-                expr = expr.trim();
-                if (expr === '') return '';
-                // Reemplazar variables por sus valores (cuidado con nombres dentro de strings)
-                const varNames = Object.keys(vars).sort((a,b)=>b.length-a.length); // más largos primero
-                let processed = expr;
-                // Protección simple: no reemplazar dentro de comillas
-                // Por simplicidad asumimos que las variables no están entrecomilladas
-                for (let v of varNames) {
-                    // Solo reemplazar palabra completa (con límites de palabra)
-                    const re = new RegExp('\\b' + v + '\\b', 'g');
-                    processed = processed.replace(re, vars[v]);
-                }
-                // Evaluar expresión matemática/concatenación
-                try {
-                    // Usamos Function en modo estricto para evaluar; solo se permiten números, strings y operadores.
-                    // Esto podría ser peligroso si el código contiene llamadas a funciones, pero en este entorno controlado aceptamos.
-                    const result = Function('"use strict"; return (' + processed + ')')();
-                    // Si es string pero viene de una variable numérica, respetamos el tipo
-                    return result;
-                } catch(e) {
-                    // Si falla, devolvemos la expresión sin evaluar (p.ej. mal formada)
-                    return expr;
-                }
-            }
-
-            if (lang === 'python') {
-                for (let line of lines) {
-                    line = line.trim();
-                    if (!line || line.startsWith('#')) continue;
-                    // Asignación simple: var = expr
-                    const assignMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
-                    if (assignMatch) {
-                        const varName = assignMatch[1];
-                        const valueExpr = assignMatch[2];
-                        // Evaluar la expresión y guardar
-                        vars[varName] = evaluate(valueExpr);
-                        continue;
-                    }
-                    // print(...)
-                    const printMatch = line.match(/^print\s*\((.*)\)\s*$/);
-                    if (printMatch) {
-                        const argsStr = printMatch[1];
-                        // Separar argumentos por coma (simplificado, no maneja comillas con comas)
-                        const args = argsStr.split(',').map(a => a.trim());
-                        const evaluated = args.map(arg => {
-                            // Si es un literal de string ('...' o "...")
-                            if ((arg.startsWith("'") && arg.endsWith("'")) || (arg.startsWith('"') && arg.endsWith('"'))) {
-                                return arg.slice(1, -1);
-                            }
-                            // Evaluar como expresión
-                            return evaluate(arg);
-                        });
-                        output += evaluated.join(' ') + '\n';
-                    }
-                }
-            } else if (lang === 'cpp') {
-                let insideMain = false;
-                for (let line of lines) {
-                    line = line.trim();
-                    if (!line) continue;
-                    if (line.startsWith('#') || line.startsWith('using namespace')) continue;
-                    if (line.includes('int main()')) { insideMain = true; continue; }
-                    if (!insideMain) continue;
-                    if (line === '{' || line === '}') continue;
-                    
-                    // Asignación con o sin tipo: int var = expr; o var = expr;
-                    const assignType = line.match(/^(int|float|double|string|char)\s+(\w+)\s*=\s*(.+?);\s*$/);
-                    const assignPlain = line.match(/^(\w+)\s*=\s*(.+?);\s*$/);
-                    if (assignType) {
-                        const varName = assignType[2];
-                        const valueExpr = assignType[3];
-                        vars[varName] = evaluate(valueExpr);
-                        continue;
-                    } else if (assignPlain) {
-                        const varName = assignPlain[1];
-                        const valueExpr = assignPlain[2];
-                        vars[varName] = evaluate(valueExpr);
-                        continue;
-                    }
-                    
-                    // cout << ...
-                    const coutMatch = line.match(/^cout\s*(<<\s*.+?);\s*$/);
-                    if (coutMatch) {
-                        // Extraer la cadena después de cout
-                        const streamPart = line.replace(/^cout\s*/, '').replace(/;\s*$/, '').trim();
-                        // Dividir por <<
-                        const parts = streamPart.split('<<').map(p => p.trim()).filter(p => p);
-                        let lineOutput = '';
-                        for (let p of parts) {
-                            if (p === 'endl') {
-                                lineOutput += '\n';
-                            } else if ((p.startsWith('"') && p.endsWith('"')) || (p.startsWith("'") && p.endsWith("'"))) {
-                                lineOutput += p.slice(1, -1);
-                            } else {
-                                const val = evaluate(p);
-                                if (typeof val === 'string') lineOutput += val;
-                                else lineOutput += String(val);
-                            }
-                        }
-                        output += lineOutput;
-                    }
-                }
-            }
-            return output.trimEnd();
-        }
-
-        function runCode() {
-            SFX.play('click');
-            state.editor.save(); 
-            const code = state.editor.getValue();
-            const outEl = document.getElementById('output-text');
-            outEl.innerText = "> Validando código fuente...";
-            switchView('console');
-
-            setTimeout(() => {
-                // Usar el nuevo motor de simulación
-                const simulatedOut = simulateExecution(code, state.lang);
-                outEl.innerText = simulatedOut || "Salida vacía.";
-                
-                const currentLvl = levels[state.prog[state.lang]];
-                if (currentLvl[state.lang].check(code, simulatedOut)) {
-                    SFX.play('win');
-                    document.getElementById('modal').classList.remove('hidden');
-                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
-                } else {
-                    SFX.play('fail');
-                    outEl.innerHTML += "\n\n<span class='text-red-500 font-bold'>[!] ERROR: El resultado no cumple la misión. Revisa el texto exacto.</span>";
-                }
-            }, 800);
-        }
-
-        // Resto de funciones sin cambios
-        function switchView(v) {
-            SFX.play('click');
-            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-            document.getElementById('view-'+v).classList.add('active');
-            document.getElementById('tab-'+v).classList.add('tab-active');
-            if(v === 'editor') setTimeout(() => state.editor.refresh(), 50);
-        }
-
-        function nextLvl() {
-            state.prog[state.lang]++;
-            document.getElementById('modal').classList.add('hidden');
-            switchView('docs');
-            render();
-        }
-
-        function handleLangChange() {
-            state.lang = document.getElementById('lang-select').value;
-            render();
-            switchView('docs');
-        }
-
-        function resetLvl() { 
-            if(confirm("¿Reiniciar etapa actual?")) render(); 
-        }
-
-        function clearConsole() { 
-            document.getElementById('output-text').innerText = "Terminal limpia."; 
-        }
-
-        window.onload = () => {
-            initEditor();
-            render();
-            switchView('docs');
-            document.body.addEventListener('touchstart', () => SFX.init(), {once: true});
-        };
-    </script>
+    <script src="levels.js"></script>
+    <script src="interpreter.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
